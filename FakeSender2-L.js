@@ -1701,6 +1701,7 @@ document.getElementById('senden').addEventListener('click', sendenbutton);
 }
 
 function abschicken() {
+    document.title = `Fake Sender`;
     var tabName = document.title;
     if (tabName.includes("Fake Sender")) {
 
