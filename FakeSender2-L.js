@@ -1686,7 +1686,7 @@ async function sendenbutton() {
                     row.style.backgroundColor = 'green';
                 }
 
-                setTimeout(() => openTab(index + 1), 250); // Öffnet den nächsten Tab nach 250ms
+                setTimeout(() => openTab(index + 1), 100); // Öffnet den nächsten Tab nach 250ms
             }
         }
 
@@ -1700,26 +1700,33 @@ document.getElementById('senden').addEventListener('click', sendenbutton);
 }
 }
 
+
 function abschicken() {
-    document.title = `Fake Sender`;
+
+    function checkAndReload() {
+    if (document.body.innerText.includes("Blockierte Anfrage") || document.body.innerText.includes("405 Not Allowed")) {
+        location.reload();
+    }
+    }
+
+    var intervalID = setInterval(checkAndReload, 250); // 5000 Millisekunden = 5 Sekunden
+
     var tabName = document.title;
-    if (tabName.includes("Fake Sender")) {
+    var url = window.location.href;
+    const village = game_data.village;
+
+    if (tabName.includes("Fake Sender") || localStorage.getItem(village.id) !== null) {
+
+    if ( village.id && url.includes(village.id.toString())) {
+        localStorage.setItem(village.id, village.id);
+    }
 
     setTimeout(function() {
         window.addEventListener('load', function() {
           location.reload();
         });
-      }, 1500);
+      }, 1000);
 
-    function checkAndReload() {
-        if (document.body.innerText.includes("Blockierte Anfrage") || document.body.innerText.includes("405 Not Allowed")) {
-          location.reload();
-        }
-      }
-      
-      // Intervall festlegen (zum Beispiel alle 5 Sekunden)
-      var intervalID = setInterval(checkAndReload, 250); // 5000 Millisekunden = 5 Sekunden
-      
       var url = window.location.href;
       var hasVillageItem = document.getElementsByClassName("village-item").length > 0;
       var hasScreenPlace = url.includes("screen=place&target");
@@ -1728,12 +1735,14 @@ function abschicken() {
       
       if (!hasVillageItem && (hasScreenPlace || hasScreenPlace2)) {
       } else if (url.includes("try=confirm")) {
-        var delay = Math.floor(Math.random() * 300) + 600;
+        var delay = Math.floor(Math.random() * 200) + 200;
         setTimeout(function() {
+           
           document.getElementById("troop_confirm_submit").click();
+          
         }, delay);
       } else {
-        var delay = Math.floor(Math.random() * 300) + 600;
+        var delay = Math.floor(Math.random() * 200) + 200;
         setTimeout(function() {
           document.getElementById("target_attack").click();
         }, delay);
@@ -1741,13 +1750,14 @@ function abschicken() {
       
       if (!hasVillageItem && hasScreenPlace3 || hasScreenPlace2 ) {
         document.getElementById("target_attack").click();
-
             window.close();
 
       } else if (hasVillageItem && hasScreenPlace3 || hasScreenPlace2 ) {
         document.getElementById("target_attack").click();
           window.addEventListener('load', function() {
         document.getElementById("troop_confirm_submit").click();
+        localStorage.removeItem(village.id.toString());
+        window.close();
               });
       }}
       $(document).ready(function() {
