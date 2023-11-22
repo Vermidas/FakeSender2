@@ -928,11 +928,13 @@ function updateProgressBar(progress) {
 function getMaxPages() {
     return new Promise((resolve, reject) => {
         $.get(`game.php?screen=overview_villages&mode=units&type=there&group=0`, function (data) {
-            const maxPages = $(".paged-nav-item", data).length;
+            const pagedNavItems = $(".paged-nav-item", data);
+            const maxPages = pagedNavItems.length > 0 ? pagedNavItems.length : 1;
             resolve(maxPages);
         }).fail(reject);
     });
 }
+
 function getPageData(page) {
     return new Promise((resolve, reject) => {
         $.get(`game.php?screen=overview_villages&mode=units&type=there&group=0&page=${page}`, function (data) {
@@ -1417,119 +1419,6 @@ function calculateSendTimeWithinWindowTwo(attackTime, earliestSendTime, latestSe
 ////////////////////////////////////
 
 ////FILTER////
-function planAttacks(allPossibleAttacks, attackCount, currentServerTime, landingTime) {
-    let sourceVillageUsageCount = new Map();
-    let targetVillageAttackCounter = new Map();
-    let immediateAttacks = allPossibleAttacks.filter(attack => {
-        let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-        let sendTime = calculateSendTime(attack.travelTime, landingTime, currentServerTime);
-        return sendTime === 'Jetzt senden';
-    });
-
-    immediateAttacks.sort((a, b) => {
-        let usageA = sourceVillageUsageCount.get(a.sourceVillage.VillagCoord) || 0;
-        let usageB = sourceVillageUsageCount.get(b.sourceVillage.VillagCoord) || 0;
-        return usageA - usageB || hmsToMilliseconds(a.travelTime) - hmsToMilliseconds(b.travelTime);
-    });
-
-    let plannedAttacks = [];
-    for (let attack of immediateAttacks) {
-        let sourceVillageId = attack.sourceVillage.VillagCoord;
-        let targetVillageId = attack.targetVillage.coordinates;
-
-        let sourceUsage = sourceVillageUsageCount.get(sourceVillageId) || 0;
-        let targetCount = targetVillageAttackCounter.get(targetVillageId) || 0;
-
-        if (sourceUsage < attack.sourceVillage.MatchCount && targetCount < attackCount) {
-            plannedAttacks.push(attack);
-            sourceVillageUsageCount.set(sourceVillageId, sourceUsage + 1);
-            targetVillageAttackCounter.set(targetVillageId, targetCount + 1);
-        }
-    }
-
-    return plannedAttacks.map(attack => {
-        let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-        let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-        return {
-            StartDorf: attack.sourceVillage.VillagCoord,
-            ZielDorf: attack.targetVillage.coordinates,
-            Entfernung: attack.distance,
-            Reisezeit: attack.travelTime,
-            Ankunftszeit: arrivalTime.toLocaleString(),
-            SendeZeit: 'Jetzt senden'
-        };
-    });
-}
-////FILTER////
-function planAttacksForDayTime(allPossibleAttacks, attackCount, currentServerTime, dayNightHours) {
-    if (!dayNightHours) {
-        console.error('Keine gültigen Tages- und Nachtzeiten verfügbar.');
-        return [];
-    }
-
-    let sourceVillageUsageCount = new Map();
-    let targetVillageAttackCounter = new Map();
-
-    let validAttacks = allPossibleAttacks.filter(attack => {
-        let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-        let landingTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-        // Vergleichen von Datum und Uhrzeit
-        let dayNightDate = new Date(dayNightHours.date);
-        if (landingTime.toDateString() !== dayNightDate.toDateString()) {
-            return false; // Datum stimmt nicht überein
-        }
-
-        let landingTimeHours = landingTime.getHours();
-        let startHour = parseInt(dayNightHours.start_hour);
-        let endHour = parseInt(dayNightHours.end_hour);
-
-        // Überprüfung der Landezeit innerhalb des Zeitfensters
-        if (endHour <= startHour) {
-            // Zeitfenster innerhalb eines Tages
-            return landingTimeHours >= endHour && landingTimeHours < startHour;
-        } else {
-            // Zeitfenster über Mitternacht hinweg
-            return landingTimeHours >= endHour || landingTimeHours < startHour;
-        }
-    });
-
-    validAttacks.sort((a, b) => {
-        let usageA = sourceVillageUsageCount.get(a.sourceVillage.VillagCoord) || 0;
-        let usageB = sourceVillageUsageCount.get(b.sourceVillage.VillagCoord) || 0;
-        return usageA - usageB || hmsToMilliseconds(a.travelTime) - hmsToMilliseconds(b.travelTime);
-    });
-
-    let plannedAttacks = [];
-    for (let attack of validAttacks) {
-        let sourceVillageId = attack.sourceVillage.VillagCoord;
-        let targetVillageId = attack.targetVillage.coordinates;
-
-        let sourceUsage = sourceVillageUsageCount.get(sourceVillageId) || 0;
-        let targetCount = targetVillageAttackCounter.get(targetVillageId) || 0;
-
-        if (sourceUsage < attack.sourceVillage.MatchCount && targetCount < attackCount) {
-            plannedAttacks.push(attack);
-            sourceVillageUsageCount.set(sourceVillageId, sourceUsage + 1);
-            targetVillageAttackCounter.set(targetVillageId, targetCount + 1);
-        }
-    }
-
-    return plannedAttacks.map(attack => {
-        let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-        let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-        return {
-            StartDorf: attack.sourceVillage.VillagCoord,
-            ZielDorf: attack.targetVillage.coordinates,
-            Entfernung: attack.distance,
-            Reisezeit: attack.travelTime,
-            Ankunftszeit: arrivalTime.toLocaleString(),
-            SendeZeit: 'Jetzt senden'
-        };
-    });
-}
 
 async function getSlowestUnitSpeed(selectedUnits) {
     const unitInfo = await twSDK.getWorldUnitInfo();
