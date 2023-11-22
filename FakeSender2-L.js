@@ -126,7 +126,6 @@ var scriptConfig = {
     allowedScreens: [],
     allowedModes: [],
     isDebug: DEBUG,
-    enableCountApi: true,
 };
 
 
