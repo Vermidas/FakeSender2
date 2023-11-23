@@ -13,6 +13,7 @@ function checkAndReload() {
     if (document.body.innerText.includes("Blockierte Anfrage") || 
         document.body.innerText.includes("405 Not Allowed")) {
       location.reload();
+      document.title = "Fake Sender";
     }
   }
   setInterval(checkAndReload, RELOAD_CHECK_INTERVAL);
@@ -126,6 +127,7 @@ var scriptConfig = {
     allowedScreens: [],
     allowedModes: [],
     isDebug: DEBUG,
+    enableCountApi: true,
 };
 
 
@@ -135,7 +137,7 @@ $.getScript(
         await twSDK.init(scriptConfig);
 
     const { villages, players, tribes } = await fetchWorldData();
-
+    if (window.location.href.includes('screen=memo')) {
 function buildUI() {
     if (window.location.href.includes('screen=memo'))  {
     function buildUnitsChoserTable() {
@@ -640,7 +642,7 @@ function setupCoordinatesFillMethod() {
 } setupCoordinatesFillMethod();
 }
 } buildUI();
-
+}
 if (window.location.href.includes('screen=memo')) {
 function initAbschickzeitraumCheckbox() {
     var checkbox = document.getElementById('AbschickzeitraumCheckbox');
@@ -927,13 +929,11 @@ function updateProgressBar(progress) {
 function getMaxPages() {
     return new Promise((resolve, reject) => {
         $.get(`game.php?screen=overview_villages&mode=units&type=there&group=0`, function (data) {
-            const pagedNavItems = $(".paged-nav-item", data);
-            const maxPages = pagedNavItems.length > 0 ? pagedNavItems.length : 1;
+            const maxPages = $(".paged-nav-item", data).length;
             resolve(maxPages);
         }).fail(reject);
     });
 }
-
 function getPageData(page) {
     return new Promise((resolve, reject) => {
         $.get(`game.php?screen=overview_villages&mode=units&type=there&group=0&page=${page}`, function (data) {
@@ -1417,7 +1417,6 @@ function calculateSendTimeWithinWindowTwo(attackTime, earliestSendTime, latestSe
 }
 ////////////////////////////////////
 
-////FILTER////
 
 async function getSlowestUnitSpeed(selectedUnits) {
     const unitInfo = await twSDK.getWorldUnitInfo();
@@ -1535,6 +1534,7 @@ function createAttackTable(attacksData) {
     buttonContainer.parentNode.insertBefore(table, buttonContainer.nextSibling);
 }
 let attacksDataTable
+
 async function sendAttacks(attacksData) {
     const world = game_data.world;
     attacksDataTable = attacksData
@@ -1562,7 +1562,7 @@ async function sendAttacks(attacksData) {
 
 let currentAttackIndex = 0;
 
-const TAB_OPEN_DELAY = 100; // Delay between opening tabs, in milliseconds
+const TAB_OPEN_DELAY = 200; // Verzögerung zwischen dem Öffnen von Tabs in Millisekunden
 
 async function sendAttackTabs() {
     try {
@@ -1571,38 +1571,64 @@ async function sendAttackTabs() {
         const endIndex = Math.min(currentAttackIndex + attackInterval, urls.length);
         
         for (let i = currentAttackIndex; i < endIndex; i++) {
-            openTab(i, urls);
-            await delay(TAB_OPEN_DELAY);
+            // Verzögert das Öffnen jedes Tabs
+            setTimeout(() => openTab(i, urls), TAB_OPEN_DELAY * (i - currentAttackIndex));
         }
 
+        // Aktualisiert den currentAttackIndex nachdem alle Tabs geöffnet wurden
+        await new Promise(resolve => setTimeout(resolve, TAB_OPEN_DELAY * (endIndex - currentAttackIndex)));
         currentAttackIndex = endIndex;
     } catch (error) {
         console.error('Fehler beim Verarbeiten der Angriffe:', error);
     }
-}
 
-function openTab(index, urls) {
-    const customTabName = `Fake Sender`;
-    const newTab = window.open(urls[index], '_blank');
-    if (newTab) {
-        newTab.addEventListener('load', function() {
-            newTab.document.title = customTabName;
+    function openTab(index, urls) {
+        const customTabName = `Fake Sender`;
+        const newTab = window.open(urls[index], '_blank');
+
+        if (newTab) {
+            renameTabWithRetry(newTab, customTabName);
+        }
+
+        const row = document.getElementById('attackRow-' + index);
+        if (row) {
+            row.style.backgroundColor = 'green';
+        }
+    }
+
+    async function renameTabWithRetry(tab, title, retries = 2) {
+        try {
+            await renameTab(tab, title);
+        } catch (error) {
+            if (retries > 0) {
+                setTimeout(() => renameTabWithRetry(tab, title, retries - 1), 100);
+            } else {
+                console.error('Fehler beim Umbenennen des Tabs:', error);
+            }
+        }
+    }
+
+    function renameTab(tab, title) {
+        return new Promise((resolve, reject) => {
+            tab.addEventListener('load', function() {
+                if (tab.document && tab.document.title !== title) {
+                    tab.document.title = title;
+                    resolve();
+                } else {
+                    reject('Tab konnte nicht umbenannt werden');
+                }
+            }, { once: true });
         });
     }
-
-    const row = document.getElementById('attackRow-' + index);
-    if (row) {
-        row.style.backgroundColor = 'green';
-    }
 }
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+
 
 if (window.location.href.includes('screen=memo')) {
     document.getElementById('senden').addEventListener('click', sendAttackTabs);
 }
+
+
 
 }
 
