@@ -1571,7 +1571,14 @@ if (window.location.href.includes('screen=memo')) {
 
     async function sendAttackTabs() {
         try {
-            currentAttackIndex = 0
+
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('FakeSender')) {
+                    localStorage.removeItem(key);
+                }
+            }
+            
             const attackInterval = angriffeSenden();
             const urls = await sendAttacks(attacksDataTable);
             const endIndex = Math.min(currentAttackIndex + attackInterval, urls.length);
@@ -1580,10 +1587,11 @@ if (window.location.href.includes('screen=memo')) {
             const foundVillages = await findVillages();
 
             foundVillages.forEach(village => {
-                localStorage.setItem(village.id, village.id);
+                localStorage.setItem('FakeSender_' + village.id, village.id);
             });
 
             for (let i = currentAttackIndex; i < endIndex; i++) {
+                // Verzögert das Öffnen jedes Tabs
                 setTimeout(() => openTab(i, urls), TAB_OPEN_DELAY * (i - currentAttackIndex));
             }
 
@@ -1640,10 +1648,10 @@ function abschicken() {
     
         const gesuchterSchluessel = game_data.village.id;
         const url = window.location.href;
-
-        var gespeicherterWert = localStorage.getItem(gesuchterSchluessel);
   
-    if (gespeicherterWert != null) {
+        const key = "FakeSender_" + gesuchterSchluessel;
+        if (localStorage.getItem(key) != null) {
+            
         document.title = `FakeSender_${game_data.village.id}`;
         var tabName = document.title;
         if (tabName === `FakeSender_${game_data.village.id}`) {
@@ -1666,7 +1674,6 @@ function abschicken() {
 
             const errorBox = document.querySelector(".error_box");
             if (errorBox && errorBox.textContent.includes("Angriffstrupp") || hasScreenPlace2) {
-            localStorage.removeItem(game_data.village.id);
             window.close();
             }
         }
