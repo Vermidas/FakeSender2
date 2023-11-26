@@ -15,7 +15,7 @@ function checkAndReload() {
       location.reload();
     }
   }
-  setInterval(checkAndReload, RELOAD_CHECK_INTERVAL);
+  setInterval(checkAndReload, RELOAD_CHECK_INTERVAL); 
 
 var urlgithub = 'https://raw.githubusercontent.com/Vermidas/FakeSender2/main/Lizenz.txt';
 var userName = game_data.player.name;
@@ -1156,7 +1156,7 @@ if (window.location.href.includes('screen=memo')) {
         return shuffledAttacks;
     }
     function planRandomizedAttacksZEITRAUM(allPossibleAttacks, attackCount, currentServerTime, landingTime) {
-        const NUM_VARIATIONS = 500;
+        const NUM_VARIATIONS = 250;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
 
@@ -1234,7 +1234,7 @@ if (window.location.href.includes('screen=memo')) {
         return shuffledAttacks;
     }
     function planRandomizedAttacksGANZTAGS(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours) {
-        const NUM_VARIATIONS = 500;
+        const NUM_VARIATIONS = 250;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
 
@@ -1284,7 +1284,7 @@ if (window.location.href.includes('screen=memo')) {
     ////////////////////////////////////
     ////RANDOM FÜR ABSCHICKZEITRAUM + GANZTAGS////
     function planRandomizedAttacksWithStartTimeGANZTAGS(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime) {
-        const NUM_VARIATIONS = 500;
+        const NUM_VARIATIONS = 250;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
 
@@ -1393,7 +1393,7 @@ if (window.location.href.includes('screen=memo')) {
         return plannedAttacks;
     }
     function planRandomizedAttacksZEITRAUMTwo(allPossibleAttacks, attackCount, currentServerTime, landingTime, attackTime) {
-        const NUM_VARIATIONS = 500;
+        const NUM_VARIATIONS = 250;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
 
@@ -1627,7 +1627,7 @@ if (window.location.href.includes('screen=memo')) {
 
 
 const ACTION_DELAY_MIN = 100;
-const ACTION_DELAY_MAX = 300;
+const ACTION_DELAY_MAX = 600;
 
 function performAction(selectorId) {
   const element = document.getElementById(selectorId);
