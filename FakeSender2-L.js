@@ -1020,7 +1020,19 @@ if (window.location.href.includes('screen=memo')) {
         return matchingVillages;
     }
 
-
+    function onBlurInputCoordinatesField() {
+        jQuery('#raInputCoordinates').blur(function () {
+            const coordinates = this.value.match(twSDK.coordsRegex);
+            if (coordinates) {
+                this.value = coordinates.join(' ');
+                jQuery('#raInputCoordinates').text(coordinates.length);
+            } else {
+                this.value = '';
+                jQuery('#raInputCoordinates').text(0);
+            }
+        });
+    } onBlurInputCoordinatesField();
+    
     let foundVillages = []
     async function getTargetVilligesAndCoords() {
         const coordinatesInput = document.getElementById("raInputCoordinates").value;
