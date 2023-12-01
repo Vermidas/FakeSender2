@@ -133,7 +133,7 @@ $.getScript(
     async function () {
         await twSDK.init(scriptConfig);
 
-        if (window.location.href.includes('screen=memo')) {
+   
     const { villages, players, tribes } = await fetchWorldData();
 
 
@@ -402,6 +402,11 @@ $.getScript(
                             ${excludedPlayersDropdown}
                         </fieldset>
                     </div>
+                    <div style="display: flex;">
+                    <div id="tableContainerPlayer" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
+                    <div id="tableContainerTribe" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
+                    <div id="tableContainerExcludedPlayers" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
+                </div>
                 </div>
                 <br>
                 <div class="rattm-box border-frame-gold-red btn-set-troops-template" id="raInputCoordinatesBox2">
@@ -544,11 +549,6 @@ $.getScript(
                 ${twSDK.tt('Senden')}
                 </a>
             </div>
-            <div style="display: flex;">
-                <div id="tableContainerPlayer" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
-                <div id="tableContainerTribe" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
-                <div id="tableContainerExcludedPlayers" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
-            </div>
             </div>
 
         `
@@ -643,7 +643,7 @@ $.getScript(
 
     } buildUI();
 
-}
+
 
 if (window.location.href.includes('screen=memo')) {
     function initAbschickzeitraumCheckbox() {
@@ -1064,6 +1064,12 @@ if (window.location.href.includes('screen=memo')) {
             
             let sourceVillagesAndUnits = await sourceVillages(selectedUnits);
             let targetVillages = await getTargetVilligesAndCoords();
+            if (targetVillages.length === 0) {
+                targetVillages = playerVillages.map(village => ({
+                    id: village[0],
+                    coordinates: village[2] + '|' + village[3]
+                }));
+            }
             let attackCount = angriffsanzahl();
             let slowestUnitSpeed = await getSlowestUnitSpeed(selectedUnits);
             let currentServerTime = twSDK.getServerDateTimeObject();
@@ -1502,8 +1508,6 @@ if (window.location.href.includes('screen=memo')) {
         });
     });
 
-
-
     function createAttackTable(attacksData) {
 
         // Überprüfen, ob bereits eine Tabelle existiert und diese entfernen
@@ -1691,15 +1695,9 @@ function abschicken() {
 } 
 abschicken();
 
-
-  
-
-
-
-
 //
 
-if (window.location.href.includes('screen=memo')) {
+
     const selectedTribes = [];
     const selectedPlayers = [];
     const excludedPlayers = [];
@@ -1735,28 +1733,42 @@ if (window.location.href.includes('screen=memo')) {
     };
 
     let playerVillages = []; // Deklariere playerVillages außerhalb des Handlers
+
     document.getElementById('raPlayers').onchange = async function() {
         // Code zum Auswählen von Spielern
         const selectedPlayer = document.getElementById('raPlayers').value;
-        console.log('Ausgewählter Spieler:', selectedPlayer); // Logge den ausgewählten Spieler
+        console.log('Ausgewählter Spieler:', selectedPlayer);
+    
         if (selectedPlayer !== '') {
             const selectedPlayerObject = players.find(([id, name]) => twSDK.cleanString(name) === selectedPlayer);
             if (selectedPlayerObject) {
                 selectedPlayers.push(selectedPlayerObject);
-                console.log('Ausgewählte Spieler:', selectedPlayers); // Logge die ausgewählten Spieler
-
+                console.log('Ausgewählte Spieler:', selectedPlayers);
+    
                 // Erhalte die Dorfdaten aus der worldDataAPI
                 const villagesData = await twSDK.worldDataAPI('village');
-                playerVillages = villagesData.filter(village => village[4] === parseInt(selectedPlayerObject[0]));
-                console.log('Dorf-IDs des ausgewählten Spielers:', playerVillages.map(village => village[0]).join(', '));
-
+                const newPlayerVillages = villagesData.filter(village => village[4] === parseInt(selectedPlayerObject[0]));
+    
+                // Hinzufügen der neuen Dörfer zu playerVillages
+                playerVillages = [...playerVillages, ...newPlayerVillages];
+    
+                // Extrahiere die Koordinaten und Dorf-IDs
+                newPlayerVillages.forEach(village => {
+                    const villageId = village[0];
+                    const coords = village[2] + '|' + village[3];
+                    console.log(`Dorf-ID: ${villageId}, Koordinaten: ${coords}`);
+                });
+    
                 createTable(selectedPlayers, 'Players');
                 return;
             }
         }
+    
         // Falls kein Spieler ausgewählt wurde, leere die Tabelle für Spieler
         createTable([], 'Players');
     };
+    
+    
 
     document.getElementById('raExcludedPlayers').onchange = function() {
         // Code zum Auswählen von ausgeschlossenen Spielern
@@ -1825,10 +1837,26 @@ if (window.location.href.includes('screen=memo')) {
                 removeButton.classList.add('btn'); // Füge die Klasse 'btn' zum Button hinzu
 
                 removeButton.onclick = function() {
-                    // Entferne das ausgewählte Element aus der Tabelle und dem Array
-                    selectedArray.splice(selectedArray.indexOf(item), 1);
+                    // Bestimme die ID des zu entfernenden Spielers
+                    const playerIdToRemove = item.id; // Angenommen, item hat eine Eigenschaft 'id'
+
+                    // Entferne den Spieler aus selectedPlayers
+                    const indexInSelectedPlayers = selectedPlayers.findIndex(player => player.id === playerIdToRemove);
+                    if (indexInSelectedPlayers > -1) {
+                        selectedPlayers.splice(indexInSelectedPlayers, 1);
+                    }
+
+                    // Entferne alle Dörfer des Spielers aus playerVillages
+                    playerVillages = playerVillages.filter(village => village.playerId !== playerIdToRemove);
+
+                    // Aktualisiere die Tabelle
                     createTable(selectedArray, entity);
                 };
+
+                
+                
+
+                
                 removeCell.appendChild(removeButton);
             });
 
@@ -1839,7 +1867,7 @@ if (window.location.href.includes('screen=memo')) {
             tableContainer.textContent = entity === 'ExcludedPlayers' ? 'Kein ausgeschlossener Spieler ausgewählt.' : entity === 'Tribes' ? 'Kein Tribe ausgewählt.' : 'Kein Spieler ausgewählt.';
         }
     }
-}
+
 
 
 async function fetchWorldData() {
