@@ -82,6 +82,7 @@ var scriptConfig = {
             'Coordinates Input': 'Coordinates Input',
         },
         de_DE: {
+            'Ankunft beliebig': 'Ankunft beliebig',
             'Angriffe Senden': 'Angriffe Senden',
             'Abschickzeitraum': 'Abschickzeitraum',
             'Sofort Schicken': 'Sofort Schicken',
@@ -227,7 +228,7 @@ $.getScript(
         .ra-fieldset select { width: 100%; padding: 2px 5px; font-size: 14px; line-height: 1; }
         .ra-fieldset input[type="text"] { width: 60px; margin: 0 auto; padding: 1px 5px; font-size: 14px; line-height: 1; text-align: center; }
         .ra-fieldset2 input[type="text"] { width: auto; margin: 0 auto; padding: 1px 5px; font-size: 14px; line-height: 1; text-align: center; }
-        .ra-input { width: 100% !important; padding: 2px 5px; font-size: 14px; line-height: 1; text-align: left !important; }
+        .ra-input { width: auto; !important; padding: 2px 5px; font-size: 14px; line-height: 1; text-align: left !important; }
 
         .ra-dflex { display: flex; }
 
@@ -361,7 +362,8 @@ $.getScript(
         #zeitraumEingabe {
             display: none;
         }
-        
+
+                   
 
 
         `;
@@ -383,29 +385,17 @@ $.getScript(
                                 <option value="automatic">${twSDK.tt('Automatic')}</option>
                             </select>
                         </fieldset>
-                        <fieldset class="ra-fieldsetnoborder" id="playerFieldset">
+                        <fieldset class="ra-fieldsetnoborder" id="playerFieldset" >
                             <div class="title">
                                 <legend>${twSDK.tt('Player')}</legend>
                             </div>
                             ${playersDropdown}
                         </fieldset>
-                        <fieldset class="ra-fieldsetnoborder" id="tribeFieldset">
-                            <div class="title">
-                                <legend>${twSDK.tt('Tribe')}</legend>
-                            </div>
-                            ${tribesDropdown}
-                        </fieldset>
-                        <fieldset class="ra-fieldsetnoborder" id="excludedPlayersFieldset">
-                            <div class="title">
-                                <legend>${twSDK.tt('Excluded Players')}</legend>
-                            </div>
-                            ${excludedPlayersDropdown}
-                        </fieldset>
                     </div>
+                    <div class="rattm-box border-frame-gold-red btn-set-troops-template" id="tableContainerPlayer" style="display: none;">
                     <div style="display: flex;">
-                    <div id="tableContainerPlayer" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
-                    <div id="tableContainerTribe" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
-                    <div id="tableContainerExcludedPlayers" style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
+                    <div  style="box-shadow: none; border: 0; width: auto; border-spacing: 2px; border-collapse: separate; margin: 10px;"></div>
+                    </div>
                 </div>
                 </div>
                 <br>
@@ -506,6 +496,7 @@ $.getScript(
                             <input type="time" id="abschickBisZeit" name="abschickBisZeit">
                             </div>
                             </div>
+                            </fieldset>
                             <br>
 
 
@@ -523,6 +514,7 @@ $.getScript(
                             <label for="bisZeit">Bis:</label>
                             <input type="time" id="bisZeit" name="bisZeit">
                             </fieldset>
+
                             <fieldset class="ra-fieldsetnoborder" id="zeitraum"style="width: 15rem;" >
                             <div class="title">
                                 <legend>${twSDK.tt('GanzTags')}</legend>
@@ -530,6 +522,16 @@ $.getScript(
                             </div>
                             <label for="datumGanzTags"></label>
                             <input type="date" id="datumGanzTags" name="datum">
+                            </fieldset>
+
+                            
+                            <fieldset class="ra-fieldsetnoborder" id="Ankunftbeliebig"style="width: 15rem;" >
+                            <div class="title">
+                                <legend>${twSDK.tt('Ankunft beliebig')}</legend>
+                                <input type="checkbox" id="Ankunftbeliebig1" name="Ankunft beliebig">
+                            </div>
+                            </fieldset>
+
                         </fieldset>
                     </div>
                 </div>
@@ -596,7 +598,7 @@ $.getScript(
     }
 
     function buildDropDown(array, entity) {
-        let dropdown = `<input type="text" class="ra-input" multiple list="raSelect${entity}" placeholder="${twSDK.tt(
+        let dropdown = `<input type="text" class="ra-input" style="width: 200px" multiple list="raSelect${entity}" placeholder="${twSDK.tt(
             'Start typing and suggestions will show ...'
         )}" id="ra${entity}"><datalist id="raSelect${entity}">`;
         array.forEach((item) => {
@@ -620,16 +622,12 @@ $.getScript(
     function setupCoordinatesFillMethod() {
         const coordinatesFillMethodDropdown = document.getElementById('raCoordinatesFillMethod');
         const playerFieldset = document.getElementById('playerFieldset');
-        const tribeFieldset = document.getElementById('tribeFieldset');
-        const excludedPlayersFieldset = document.getElementById('excludedPlayersFieldset');
         const importBox = document.getElementById('raInputCoordinatesBox');
         const importBox2 = document.getElementById('raInputCoordinatesBox2');
 
         function toggleFieldsVisibility() {
             const isAutomatic = coordinatesFillMethodDropdown.value === 'automatic';
             playerFieldset.style.display = isAutomatic ? 'block' : 'none';
-            tribeFieldset.style.display = isAutomatic ? 'block' : 'none';
-            excludedPlayersFieldset.style.display = isAutomatic ? 'block' : 'none';
             importBox.style.display = isAutomatic ? 'none' : 'block';
             importBox2.style.display = isAutomatic ? 'none' : 'block';
         }
@@ -646,6 +644,7 @@ $.getScript(
 
 
 if (window.location.href.includes('screen=memo')) {
+
     function initAbschickzeitraumCheckbox() {
         var checkbox = document.getElementById('AbschickzeitraumCheckbox');
         var zeitraumEingabe = document.getElementById('zeitraumEingabe');
@@ -705,6 +704,33 @@ if (window.location.href.includes('screen=memo')) {
         }
     } $('#datumGanzTags').on('change', function() {
         var result = getDayWithNightHours();
+        if (result) {
+            console.log(result);
+        }
+    });
+
+    function ankunftBeliebig() {
+        var selectedDate = $('#datumGanzTags').val();
+
+
+        var worldConfigStr = localStorage.getItem("world_config");
+
+        if (worldConfigStr) {
+            var worldConfig = JSON.parse(worldConfigStr);
+
+            var startHour = worldConfig.config.night.start_hour;
+            var endHour = worldConfig.config.night.end_hour;
+
+            return {
+                start_hour: startHour,
+                end_hour: endHour
+            };
+        } else {
+            console.error("Weltkonfiguration nicht im Local Storage gefunden.");
+            return null;
+        }
+    } $('#Ankunftbeliebig1').on('change', function() {
+        var result = ankunftBeliebig();
         if (result) {
             console.log(result);
         }
@@ -1061,6 +1087,7 @@ if (window.location.href.includes('screen=memo')) {
             let zeitraumCheckbox = document.getElementById('zeitraumCheckbox');
             let AbschickzeitraumCheckbox = document.getElementById('AbschickzeitraumCheckbox');
             let ganztagsCheckbox = document.getElementById('ganztagsCheckbox');
+            let ankunftBeliebig = document.getElementById('Ankunftbeliebig1');
             
             let sourceVillagesAndUnits = await sourceVillages(selectedUnits);
             let targetVillages = await getTargetVilligesAndCoords();
@@ -1116,6 +1143,18 @@ if (window.location.href.includes('screen=memo')) {
                 let attacksData = planRandomizedAttacksZEITRAUMTwo(allPossibleAttacks, attackCount, currentServerTime, landingTime, attackTime);
                 createAttackTable(attacksData);
                 sendAttacks(attacksData)
+            } else if (sofortSchickenCheckbox.checked && ankunftBeliebig.checked) {
+                let DayWithNightHours = getDayWithNightHours();
+                let attacksData = planRandomizedAttacksBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours);
+                createAttackTable(attacksData);
+                sendAttacks(attacksData)
+            ////RANDOM FÜR ABSCHICKZEITRAUM + GANZTAGS////
+            } else if (AbschickzeitraumCheckbox.checked && ankunftBeliebig.checked) {
+                let DayWithNightHours = getDayWithNightHours();
+                let attackTime = getStartTime();
+                let attacksData = planRandomizedAttacksWithStartTimeBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime);
+                createAttackTable(attacksData);
+                sendAttacks(attacksData) 
             } else {
                 // Implementierung für andere Fälle oder eine Fehlermeldung
                 console.log("Mindestens eine Checkbox muss ausgewählt sein.");
@@ -1436,6 +1475,152 @@ if (window.location.href.includes('screen=memo')) {
         return new Date(windowStart.getTime() + Math.random() * (windowEnd.getTime() - windowStart.getTime()));
     }
     ////////////////////////////////////
+    ////RANDOM FÜR SOFORT + BELIEBIG////
+    function planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours) {
+        let sourceVillageUsageCount = new Map();
+        let targetVillageAttackCounter = new Map();
+        let attackPairs = new Set(); 
+        let plannedAttacks = [];
+
+        for (let attack of randomizedAttacks) {
+            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+            let potentialArrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+
+            // Überprüfung der Ankunftszeit im definierten Zeitfenster
+            if (!isWithinTimeWindowBeliebig(potentialArrivalTime, DayWithNightHours)) {
+                continue;
+            }
+
+            let sourceVillageId = attack.sourceVillage.VillagCoord;
+            let targetVillageId = attack.targetVillage.coordinates;
+            let pairKey = `${sourceVillageId}-${targetVillageId}`;
+
+            if (attackPairs.has(pairKey)) {
+                continue;
+            }
+
+            let sourceUsage = sourceVillageUsageCount.get(sourceVillageId) || 0;
+            let targetCount = targetVillageAttackCounter.get(targetVillageId) || 0;
+
+            if (sourceUsage < attack.sourceVillage.MatchCount && targetCount < attackCount) {
+                plannedAttacks.push(attack);
+                sourceVillageUsageCount.set(sourceVillageId, sourceUsage + 1);
+                targetVillageAttackCounter.set(targetVillageId, targetCount + 1);
+                attackPairs.add(pairKey);
+            }
+        }
+
+        return plannedAttacks;
+    }
+    function planRandomizedAttacksBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours) {
+        const NUM_VARIATIONS = 250;
+        let bestAttackPlan = [];
+        let maxUniqueStartVillages = 0;
+
+        for (let i = 0; i < NUM_VARIATIONS; i++) {
+            let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
+            let plannedAttacks = planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
+
+            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+            if (uniqueStartVillages > maxUniqueStartVillages) {
+                maxUniqueStartVillages = uniqueStartVillages;
+                bestAttackPlan = plannedAttacks;
+            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                bestAttackPlan = plannedAttacks;
+            }
+        }
+
+        return bestAttackPlan.map(attack => {
+            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+
+            return {
+                StartDorf: attack.sourceVillage.VillagCoord,
+                ZielDorf: attack.targetVillage.coordinates,
+                Entfernung: attack.distance,
+                Reisezeit: attack.travelTime,
+                Ankunftszeit: arrivalTime.toLocaleString(),
+                SendeZeit: 'Jetzt senden'
+            };
+        });
+    }
+    function isWithinTimeWindowBeliebig(arrivalTime, DayWithNightHours) {
+        let arrivalHour = arrivalTime.getHours();
+        let startHour = parseInt(DayWithNightHours.start_hour);
+        let endHour = parseInt(DayWithNightHours.end_hour);
+    
+        if (endHour <= startHour) {
+            return arrivalHour >= endHour && arrivalHour < startHour;
+        } else {
+            return arrivalHour >= endHour || arrivalHour < startHour;
+        }
+    }
+    ////////////////////////////////////
+    ////RANDOM FÜR ABSCHICKZEITRAUM + BELIEBIG//// 
+    function planRandomizedAttacksWithStartTimeBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime) {
+        const NUM_VARIATIONS = 250;
+        let bestAttackPlan = [];
+        let maxUniqueStartVillages = 0;
+
+        for (let i = 0; i < NUM_VARIATIONS; i++) {
+            let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
+            let plannedAttacks = planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
+
+            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+            if (uniqueStartVillages > maxUniqueStartVillages) {
+                maxUniqueStartVillages = uniqueStartVillages;
+                bestAttackPlan = plannedAttacks;
+            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                bestAttackPlan = plannedAttacks;
+            }
+        }
+
+        return bestAttackPlan.map(attack => {
+            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+
+            let sendTime = calculateSendTimeWithinWindowBeliebig(attackTime, currentServerTime, travelTimeMs);
+
+            return {
+                StartDorf: attack.sourceVillage.VillagCoord,
+                ZielDorf: attack.targetVillage.coordinates,
+                Entfernung: attack.distance,
+                Reisezeit: attack.travelTime,
+                Ankunftszeit: arrivalTime.toLocaleString(),
+                SendeZeit: sendTime.toLocaleString()
+            };
+        });
+    }
+    function calculateSendTimeWithinWindowBeliebig(attackTime, currentServerTime, travelTimeMs) {
+        if (!attackTime || !attackTime.startTime || !attackTime.endTime) {
+            throw new Error('Attack time window is not defined properly.');
+        }
+    
+        // Extrahiere nur die Uhrzeiten, ignoriere das Datum
+        let windowStart = new Date();
+        windowStart.setHours(attackTime.startTime.getHours(), attackTime.startTime.getMinutes(), attackTime.startTime.getSeconds());
+        
+        let windowEnd = new Date();
+        windowEnd.setHours(attackTime.endTime.getHours(), attackTime.endTime.getMinutes(), attackTime.endTime.getSeconds());
+    
+        if (windowEnd.getTime() <= windowStart.getTime()) {
+            windowEnd.setDate(windowEnd.getDate() + 1); // Füge einen Tag hinzu, wenn das Zeitfenster Mitternacht überschreitet
+        }
+    
+        // Berechnen Sie die Sendezeit innerhalb des Fensters
+        let sendTime = new Date(windowStart.getTime() + Math.random() * (windowEnd.getTime() - windowStart.getTime()));
+    
+        // Stellen Sie sicher, dass die berechnete Sendezeit nach der aktuellen Serverzeit liegt
+        if (sendTime.getTime() < currentServerTime.getTime()) {
+            throw new Error('Calculated send time is before the current server time.');
+        }
+    
+        // Rückgabewert ist das berechnete Sendefenster, berücksichtigt das aktuelle Datum
+        return sendTime;
+    }
+    
+    
+
 
 
     async function getSlowestUnitSpeed(selectedUnits) {
@@ -1697,42 +1882,9 @@ abschicken();
 
 //
 
-
-    const selectedTribes = [];
     const selectedPlayers = [];
-    const excludedPlayers = [];
 
-    document.getElementById('raTribes').onchange = async function() {
-        // Code zum Auswählen von Stämmen
-        const selectedTribe = document.getElementById('raTribes').value;
-        console.log('Ausgewählter Stamm:', selectedTribe); // Logge den ausgewählten Stamm
-        const selectedPlayersInTribe = [];
-        if (selectedTribe !== '') {
-            const selectedTribeObject = tribes.find(([id, _, tag]) => twSDK.cleanString(tag) === selectedTribe);
-            if (selectedTribeObject) {
-                selectedTribes.push(selectedTribeObject);
-                console.log('Ausgewählte Stämme:', selectedTribes); // Logge die ausgewählten Stämme
-
-                // Erhalte die Dorfdaten aus der worldDataAPI
-                const villagesData = await twSDK.worldDataAPI('village');
-                selectedPlayersInTribe.push(selectedTribe); // Füge den ausgewählten Stamm zur Tabelle hinzu
-                players.forEach(player => {
-                    if (player[2] === selectedTribeObject[0]) {
-                        const playerVillages = villagesData.filter(village => village[4] === parseInt(player[0]));
-                        console.log('Spieler:', player[1]);
-                        console.log('Dorf-IDs:', playerVillages.map(village => village[0]).join(', '));
-                    }
-                });
-
-                createTable(selectedTribes, 'Tribes');
-                return;
-            }
-        }
-        // Falls kein Stamm ausgewählt wurde, leere die Tabelle für Stämme
-        createTable([], 'Tribes');
-    };
-
-    let playerVillages = []; // Deklariere playerVillages außerhalb des Handlers
+    let playerVillages = []; 
 
     document.getElementById('raPlayers').onchange = async function() {
         // Code zum Auswählen von Spielern
@@ -1768,106 +1920,73 @@ abschicken();
         createTable([], 'Players');
     };
     
-    
-
-    document.getElementById('raExcludedPlayers').onchange = function() {
-        // Code zum Auswählen von ausgeschlossenen Spielern
-        const selectedExcludedPlayer = document.getElementById('raExcludedPlayers').value;
-        console.log('Ausgewählter ausgeschlossener Spieler:', selectedExcludedPlayer); // Logge den ausgewählten ausgeschlossenen Spieler
-        if (selectedExcludedPlayer !== '') {
-            const selectedExcludedPlayerObject = players.find(([id, name]) => twSDK.cleanString(name) === selectedExcludedPlayer);
-            if (selectedExcludedPlayerObject) {
-                excludedPlayers.push(selectedExcludedPlayerObject);
-                console.log('Ausgewählte ausgeschlossene Spieler:', excludedPlayers); // Logge die ausgewählten ausgeschlossenen Spieler
-                createTable(excludedPlayers, 'ExcludedPlayers');
-                return;
-            }
-        }
-        // Falls kein ausgeschlossener Spieler ausgewählt wurde, leere die Tabelle für ausgeschlossene Spieler
-        createTable([], 'ExcludedPlayers');
-    };
-
     function createTable(selectedArray, entity) {
-        const tableContainer = entity === 'ExcludedPlayers'
-            ? document.getElementById('tableContainerExcludedPlayers')
-            : entity === 'Tribes'
-            ? document.getElementById('tableContainerTribe')
-            : document.getElementById('tableContainerPlayer');
-
+        const tableContainer = document.getElementById('tableContainerPlayer');
+    
         tableContainer.innerHTML = ''; // Lösche den vorherigen Inhalt des Containers
-
+        tableContainer.style.display = selectedArray.length > 0 ? 'block' : 'none';
+    
         if (selectedArray.length > 0) {
-            // Erstelle eine Tabelle, wenn mindestens ein Element ausgewählt wurde
             const table = document.createElement('table');
-
+            table.style.width = '100%';
+            table.setAttribute('border', '1');
+    
             // Erstelle die Kopfzeile für die Tabelle
             const headerRow = table.createTHead().insertRow();
             const headerCell = document.createElement('th');
-            headerCell.textContent = entity === 'ExcludedPlayers' ? 'Ausgeschlossene Spieler' : entity === 'Tribes' ? 'Stämme' : 'Spieler';
+            headerCell.textContent = 'Spieler';
             headerRow.appendChild(headerCell);
             const headerRemoveCell = document.createElement('th');
             headerRemoveCell.textContent = 'Aktionen';
             headerRow.appendChild(headerRemoveCell);
-
+    
             // Iteriere durch die ausgewählten Elemente und füge sie zur Tabelle hinzu
-            selectedArray.forEach(item => {
+            selectedArray.forEach((item, index) => {
                 const row = table.insertRow();
+    
                 const cell = row.insertCell(0);
-
-                if (entity === 'Players' || entity === 'ExcludedPlayers') {
-                    // Füge das Bild vor dem Spieler ein
-                    const playerImage = document.createElement('img');
-                    playerImage.src = 'https://dsde.innogamescdn.com/asset/c38e8d7e/graphic/welcome/player_points.png';
-                    playerImage.style.marginRight = '10px'; // Hier den Abstand anpassen
-                    cell.appendChild(playerImage);
-                } else if (entity === 'Tribes') {
-                    // Füge das Bild vor dem Stamm ein
-                    const tribeImage = document.createElement('img');
-                    tribeImage.src = 'https://dsde.innogamescdn.com/asset/c38e8d7e/graphic/welcome/player_points.png';
-                        tribeImage.style.marginRight = '10px'; // Hier den Abstand anpassen
-                    cell.appendChild(tribeImage);
-                }
-
-                cell.innerHTML += entity === 'ExcludedPlayers' ? item[1] : entity === 'Tribes' ? item[2] : item[1];
-
+                // Füge das Bild vor dem Spieler ein
+                const playerImage = document.createElement('img');
+                playerImage.src = 'https://dsde.innogamescdn.com/asset/c38e8d7e/graphic/welcome/player_points.png';
+                playerImage.style.marginRight = '10px';
+                cell.appendChild(playerImage);
+    
+                cell.innerHTML += item[1];
+    
                 // Füge Schaltfläche zum Entfernen hinzu
                 const removeCell = row.insertCell(1);
                 const removeButton = document.createElement('button');
                 removeButton.textContent = 'Entfernen';
-                removeButton.classList.add('btn'); // Füge die Klasse 'btn' zum Button hinzu
-
+                removeButton.classList.add('btn');
+    
                 removeButton.onclick = function() {
-                    // Bestimme die ID des zu entfernenden Spielers
-                    const playerIdToRemove = item.id; // Angenommen, item hat eine Eigenschaft 'id'
-
+                    const playerIdToRemove = item[0]; // oder item.id
+                
                     // Entferne den Spieler aus selectedPlayers
-                    const indexInSelectedPlayers = selectedPlayers.findIndex(player => player.id === playerIdToRemove);
+                    const indexInSelectedPlayers = selectedPlayers.findIndex(player => player[0] === playerIdToRemove);
                     if (indexInSelectedPlayers > -1) {
                         selectedPlayers.splice(indexInSelectedPlayers, 1);
                     }
-
-                    // Entferne alle Dörfer des Spielers aus playerVillages
-                    playerVillages = playerVillages.filter(village => village.playerId !== playerIdToRemove);
-
-                    // Aktualisiere die Tabelle
-                    createTable(selectedArray, entity);
+                
+                    // Entferne die Dörfer des Spielers aus playerVillages
+                    // Stellen Sie sicher, dass Sie die richtige Eigenschaft zur Überprüfung der Spieler-ID verwenden
+                    playerVillages = playerVillages.filter(village => village[4] !== playerIdToRemove);
+                
+                    createTable(selectedPlayers, 'Players');
                 };
-
                 
-                
-
                 
                 removeCell.appendChild(removeButton);
             });
-
-            // Füge die Tabelle zum Container hinzu
+    
             tableContainer.appendChild(table);
         } else {
-            // Wenn kein Element ausgewählt wurde, zeige eine Meldung oder tue etwas anderes
-            tableContainer.textContent = entity === 'ExcludedPlayers' ? 'Kein ausgeschlossener Spieler ausgewählt.' : entity === 'Tribes' ? 'Kein Tribe ausgewählt.' : 'Kein Spieler ausgewählt.';
+            // Wenn kein Spieler ausgewählt wurde, zeige eine Meldung
+            tableContainer.textContent = 'Kein Spieler ausgewählt.';
         }
     }
-
+    
+    
 
 
 async function fetchWorldData() {
