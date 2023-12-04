@@ -1881,7 +1881,8 @@ function abschicken() {
             }
 
             const errorBox = document.querySelector(".error_box");
-            if (errorBox && errorBox.textContent.includes("Angriffstrupp") || hasScreenPlace2) {
+            if (errorBox && errorBox.textContent.includes("Angriffstrupp") || hasScreenPlace2) {      
+            localStorage.removeItem(key); 
             window.close();
             }
         }
