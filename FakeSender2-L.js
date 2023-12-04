@@ -7,6 +7,7 @@
 // @match        https://*.die-staemme.de/*
 
 // ==/UserScript==
+const RELOAD_CHECK_INTERVAL = 250;
 function checkServerStatus() {
     fetch(window.location.href)
         .then(response => {
