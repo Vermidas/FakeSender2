@@ -7,18 +7,6 @@
 // @match        https://*.die-staemme.de/*
 
 // ==/UserScript==
-const RELOAD_CHECK_INTERVAL = 250;
-function checkServerStatus() {
-    fetch(window.location.href)
-        .then(response => {
-            if (!response.ok && (response.status === 405 || response.statusText === "Blockierte Anfrage")) {
-                location.reload();
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-setInterval(checkServerStatus, RELOAD_CHECK_INTERVAL);
 
 
 var urlgithub = 'https://raw.githubusercontent.com/Vermidas/FakeSender2/main/Lizenz.txt';
@@ -49,7 +37,15 @@ fetch(urlgithub)
 if (typeof DEBUG !== 'boolean') DEBUG = false;
 
 
+const RELOAD_CHECK_INTERVAL = 250;
 
+function checkAndReload() {
+    if (document.body.innerText.includes("Blockierte Anfrage") || 
+        document.body.innerText.includes("405 Not Allowed")){
+      location.reload();
+    }
+  }
+  setInterval(checkAndReload, RELOAD_CHECK_INTERVAL); 
 
 
 // Script Config
