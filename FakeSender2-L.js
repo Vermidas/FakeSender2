@@ -142,11 +142,12 @@ $.getScript(
         twSDK.getWorldConfig();
 
 
-   
+if (window.location.href.includes('screen=memo')) {
+
     const { villages, players, tribes } = await fetchWorldData();
 
 
-    if (window.location.href.includes('screen=memo')) {
+
 
     function buildUI() {
 
@@ -1627,10 +1628,6 @@ if (window.location.href.includes('screen=memo')) {
         // Rückgabewert ist das berechnete Sendefenster, berücksichtigt das aktuelle Datum
         return sendTime;
     }
-    
-    
-
-
 
     async function getSlowestUnitSpeed(selectedUnits) {
         const unitInfo = await twSDK.getWorldUnitInfo();
@@ -1895,7 +1892,8 @@ abschicken();
     const selectedPlayers = [];
 
     let playerVillages = []; 
-    if (window.location.href.includes('screen=memo')) {
+
+if (window.location.href.includes('screen=memo')) {     
     document.getElementById('raPlayers').onchange = async function() {
         // Code zum Auswählen von Spielern
         const selectedPlayer = document.getElementById('raPlayers').value;
@@ -2014,12 +2012,6 @@ abschicken();
 
     }
 );
-
-
-
-
-
-
 
 
 
