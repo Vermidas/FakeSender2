@@ -1894,7 +1894,7 @@ abschicken();
     const selectedPlayers = [];
 
     let playerVillages = []; 
-
+    if (window.location.href.includes('screen=memo')) {
     document.getElementById('raPlayers').onchange = async function() {
         // Code zum Auswählen von Spielern
         const selectedPlayer = document.getElementById('raPlayers').value;
@@ -1994,7 +1994,7 @@ abschicken();
             tableContainer.textContent = 'Kein Spieler ausgewählt.';
         }
     }
-    
+}  
     
 
 
