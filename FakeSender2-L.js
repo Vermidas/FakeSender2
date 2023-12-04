@@ -8,14 +8,16 @@
 
 // ==/UserScript==
 const RELOAD_CHECK_INTERVAL = 250;
+const reloadKeywords = ["Blockierte Anfrage", "405 Not Allowed"];
 
 function checkAndReload() {
-    if (document.body.innerText.includes("Blockierte Anfrage") || 
-        document.body.innerText.includes("405 Not Allowed")){
-      location.reload();
-    }
+  if (reloadKeywords.some(keyword => document.body.innerText.includes(keyword))) {
+    location.reload();
   }
-  setInterval(checkAndReload, RELOAD_CHECK_INTERVAL); 
+}
+
+setInterval(checkAndReload, RELOAD_CHECK_INTERVAL);
+
 
 var urlgithub = 'https://raw.githubusercontent.com/Vermidas/FakeSender2/main/Lizenz.txt';
 var userName = game_data.player.name;
