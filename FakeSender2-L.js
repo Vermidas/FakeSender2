@@ -51,8 +51,13 @@ if (typeof DEBUG !== 'boolean') DEBUG = false;
 // Script Config
 var scriptConfig = {
     scriptData: {
+        prefix: 'fakeScriptGenerator',
         name: 'Fake Sender',
-        version: 'v1.1',
+        version: 'v2',
+        author: 'Sakri',
+        authorUrl: '',
+        helpLink:
+            '',
     },
     translations: {
         en_DK: {
@@ -133,12 +138,15 @@ $.getScript(
     `https://raw.githack.com/Sakrixxxx/sdk/main/twsdk.js`,
     async function () {
         await twSDK.init(scriptConfig);
+        const scriptInfo = twSDK.scriptInfo();
+        twSDK.getWorldConfig();
 
 
    
     const { villages, players, tribes } = await fetchWorldData();
 
 
+    if (window.location.href.includes('screen=memo')) {
 
     function buildUI() {
 
@@ -641,7 +649,7 @@ $.getScript(
     } setupCoordinatesFillMethod();
 
     } buildUI();
-
+    }
 
 
 if (window.location.href.includes('screen=memo')) {
@@ -1990,18 +1998,17 @@ abschicken();
     
 
 
-async function fetchWorldData() {
-    try {
-        const villages = await twSDK.worldDataAPI('village');
-        const players = await twSDK.worldDataAPI('player');
-        const tribes = await twSDK.worldDataAPI('ally');
-        return { villages, players, tribes };
-    } catch (error) {
-        UI.ErrorMessage(error);
-        console.error(` Error:`, error);
+    async function fetchWorldData() {
+        try {
+            const villages = await twSDK.worldDataAPI('village');
+            const players = await twSDK.worldDataAPI('player');
+            const tribes = await twSDK.worldDataAPI('ally');
+            return { villages, players, tribes };
+        } catch (error) {
+            UI.ErrorMessage(error);
+            console.error(`${scriptInfo} Error:`, error);
+        }
     }
-
-}
 
 
     }
