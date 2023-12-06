@@ -142,7 +142,7 @@ $.getScript(
         twSDK.getWorldConfig();
 
 
-if (window.location.href.includes('screen=memo')) {
+
 
     const { villages, players, tribes } = await fetchWorldData();
 
@@ -628,7 +628,7 @@ if (window.location.href.includes('screen=memo')) {
         dropdown += '</datalist>';
         return dropdown;
     }
-
+    if (window.location.href.includes('screen=memo')) {
     function setupCoordinatesFillMethod() {
         const coordinatesFillMethodDropdown = document.getElementById('raCoordinatesFillMethod');
         const playerFieldset = document.getElementById('playerFieldset');
@@ -648,9 +648,9 @@ if (window.location.href.includes('screen=memo')) {
         // Füge einen Event-Listener zum Ändern des Dropdown-Werts hinzu
         coordinatesFillMethodDropdown.addEventListener('change', toggleFieldsVisibility);
     } setupCoordinatesFillMethod();
-
-    } buildUI();
     }
+    } buildUI();
+    
 
 
 if (window.location.href.includes('screen=memo')) {
@@ -1699,8 +1699,9 @@ if (window.location.href.includes('screen=memo')) {
         });
     });
 
-    function createAttackTable(attacksData) {
+//////////TABELLE//////// 
 
+    function createAttackTable(attacksData) {
         // Überprüfen, ob bereits eine Tabelle existiert und diese entfernen
         let existingTable = document.getElementById('attacksTable');
         if (existingTable) {
@@ -1723,25 +1724,104 @@ if (window.location.href.includes('screen=memo')) {
         let row = thead.insertRow();
 
         let headers = ["StartDorf", "ZielDorf", "Entfernung", "Reisezeit", "Ankunftszeit", "Sende Zeit"];
-        headers.forEach(headerText => {
+        headers.forEach((headerText, index) => {
             let header = document.createElement('th');
             header.textContent = headerText;
+            header.style.cursor = 'pointer'; // Optional: Cursor-Stil ändern, um Klickbarkeit anzudeuten
+            header.addEventListener('click', () => sortTableByColumn(table, index, isAscending => !isAscending));
             row.appendChild(header);
         });
+        
+
+        let tbody = table.createTBody();
 
         attacksData.forEach((attack, index) => {
-            let row = table.insertRow();
+            let row = tbody.insertRow();
             row.id = 'attackRow-' + index; // Eindeutige ID für die Zeile
             Object.values(attack).forEach(text => {
                 let cell = row.insertCell();
                 cell.textContent = text;
             });
         });
-        
 
         let buttonContainer = document.getElementById('Abgleichen').parentNode;
         buttonContainer.parentNode.insertBefore(table, buttonContainer.nextSibling);
     }
+    function sortTableByColumn(table, column, orderToggle) {
+        let tbody = table.tBodies[0];
+        let rows = Array.from(tbody.rows);
+        let isAscending = typeof table.sortedColumn === 'undefined' || table.sortedColumn !== column 
+                            ? true 
+                            : orderToggle(table.isAscending);
+
+        table.sortedColumn = column;
+        table.isAscending = isAscending;
+
+        rows.sort((rowA, rowB) => {
+            let cellA = rowA.cells[column].textContent.trim();
+            let cellB = rowB.cells[column].textContent.trim();
+
+            // Spezielle Behandlung für Datum- und Zeitwerte
+            if (column === 5) { // Ersetzen Sie indexDerAnkunftszeitSpalte durch den tatsächlichen Index
+                let dateA = new Date(cellA);
+                let dateB = new Date(cellB);
+                return isAscending ? dateA - dateB : dateB - dateA;
+            }
+
+            // Standardvergleich für andere Spalten
+            let compareResult = 0;
+            if (!isNaN(parseFloat(cellA)) && !isNaN(parseFloat(cellB))) {
+                compareResult = parseFloat(cellA) - parseFloat(cellB);
+            } else {
+                compareResult = cellA.localeCompare(cellB);
+            }
+
+            return isAscending ? compareResult : -compareResult;
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    function formatTotalTimeHMS(startDate, endDate) {
+        let totalSeconds = Math.floor((endDate - startDate) / 1000);
+        let hours = Math.floor(totalSeconds / 3600);
+        let minutes = Math.floor((totalSeconds % 3600) / 60);
+        let seconds = totalSeconds % 60;
+    
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    function updateAttackTable() {
+        let currentServerTime = twSDK.getServerDateTimeObject(); // Aktuelle Serverzeit
+        let table = document.getElementById('attacksTable');
+        if (!table) return;
+    
+        for (let row of table.rows) {
+            if (row.id.startsWith('attackRow-')) {
+                let sourceVillage = row.cells[0].textContent;
+                let travelTime = hmsToMilliseconds(row.cells[3].textContent);
+    
+                let sendTime = calculateSendTimeForUpdate(sourceVillage, travelTime, currentServerTime);
+                let remainingTime = sendTime - currentServerTime;
+    
+                let cell = row.cells[4];
+                cell.textContent = sendTime.toLocaleString();
+    
+                if (remainingTime >= 0) {
+                    let formattedTime = formatTotalTimeHMS(currentServerTime, sendTime);
+    
+                    // Erstelle jedes Mal ein neues span-Element
+                    let span = document.createElement('span');
+                    span.style.fontWeight = 'bold';
+                    span.style.color = 'rgb(0, 0, 255)';
+                    span.textContent = ` (${formattedTime})`;
+                    cell.appendChild(span);
+                }
+            }
+        }
+    }
+
+    setInterval(updateAttackTable, 500); //500ms
+
+////////////////////////
 
     let attacksDataTable
 
