@@ -17,35 +17,8 @@ function checkAndReload() {
     }
   } setInterval(checkAndReload, RELOAD_CHECK_INTERVAL); 
 
-var urlgithub = 'https://raw.githubusercontent.com/Vermidas/FakeSender2/main/Lizenz.txt';
-var userName = game_data.player.name;
-
-fetch(urlgithub)
-  .then(response => response.text())
-  .then(data => {
-    var lines = data.split('\n');
-    var found = false;
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      if (line.trim() === '') {
-        continue; // Skip empty lines
-      }
-      var parts = line.split(',');
-      var user = parts[0].trim();
-      var dateString = parts[1] ? parts[1].trim() : '';
-      var userDate = dateString ? new Date(dateString) : null;
-      if (user === userName && userDate && isSameDayOrFuture(userDate, new Date())) {
-        found = true;
-        break;
-      }
-    }
-
-    if (found) {
-
-if (typeof DEBUG !== 'boolean') DEBUG = false;
-
-const ACTION_DELAY_MIN = 100;
-const ACTION_DELAY_MAX = 600;
+const ACTION_DELAY_MIN = 200;
+const ACTION_DELAY_MAX = 400;
 
 function performAction(selectorId) {
   const element = document.getElementById(selectorId);
@@ -93,7 +66,36 @@ function abschicken() {
 abschicken();
 
 
+var urlgithub = 'https://raw.githubusercontent.com/Vermidas/FakeSender2/main/Lizenz.txt';
+var userName = game_data.player.name;
 
+fetch(urlgithub)
+  .then(response => response.text())
+  .then(data => {
+    var lines = data.split('\n');
+    var found = false;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.trim() === '') {
+        continue; // Skip empty lines
+      }
+      var parts = line.split(',');
+      var user = parts[0].trim();
+      var dateString = parts[1] ? parts[1].trim() : '';
+      var userDate = dateString ? new Date(dateString) : null;
+      if (user === userName && userDate && isSameDayOrFuture(userDate, new Date())) {
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+
+if (typeof DEBUG !== 'boolean') DEBUG = false;
+
+
+
+if (window.location.href.includes('screen=memo')) {
 // Script Config
 var scriptConfig = {
     scriptData: {
@@ -674,7 +676,7 @@ $.getScript(
         dropdown += '</datalist>';
         return dropdown;
     }
-    if (window.location.href.includes('screen=memo')) {
+
     function setupCoordinatesFillMethod() {
         const coordinatesFillMethodDropdown = document.getElementById('raCoordinatesFillMethod');
         const playerFieldset = document.getElementById('playerFieldset');
@@ -694,12 +696,12 @@ $.getScript(
         // Füge einen Event-Listener zum Ändern des Dropdown-Werts hinzu
         coordinatesFillMethodDropdown.addEventListener('change', toggleFieldsVisibility);
     } setupCoordinatesFillMethod();
-    }
+    
     } buildUI();
     
 
 
-if (window.location.href.includes('screen=memo')) {
+
 
     function initAbschickzeitraumCheckbox() {
         var checkbox = document.getElementById('AbschickzeitraumCheckbox');
@@ -1835,6 +1837,14 @@ if (window.location.href.includes('screen=memo')) {
     
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
+    function calculateSendTimeForUpdate(sourceVillage, travelTime, currentServerTime) {
+        // Logic to calculate send time
+        // This is just a placeholder logic. You should replace it with your actual calculation.
+        let sendTime = new Date(currentServerTime.getTime() + travelTime);
+    
+        return sendTime;
+    }
+    
     function updateAttackTable() {
         let currentServerTime = twSDK.getServerDateTimeObject(); // Aktuelle Serverzeit
         let table = document.getElementById('attacksTable');
@@ -1864,8 +1874,7 @@ if (window.location.href.includes('screen=memo')) {
             }
         }
     }
-
-    setInterval(updateAttackTable, 500); //500ms
+setInterval(updateAttackTable, 500); //500ms
 
 ////////////////////////
 
@@ -1957,11 +1966,9 @@ if (window.location.href.includes('screen=memo')) {
             }
         }
     }
+document.getElementById('senden').addEventListener('click', sendAttackTabs);
+    
 
-    if (window.location.href.includes('screen=memo')) {
-        document.getElementById('senden').addEventListener('click', sendAttackTabs);
-    }
-}
 
 
 
@@ -1971,7 +1978,7 @@ if (window.location.href.includes('screen=memo')) {
 
     let playerVillages = []; 
 
-if (window.location.href.includes('screen=memo')) {     
+     
     document.getElementById('raPlayers').onchange = async function() {
         // Code zum Auswählen von Spielern
         const selectedPlayer = document.getElementById('raPlayers').value;
@@ -2071,7 +2078,7 @@ if (window.location.href.includes('screen=memo')) {
             tableContainer.textContent = 'Kein Spieler ausgewählt.';
         }
     }
-}  
+  
     
 
 
@@ -2091,7 +2098,7 @@ if (window.location.href.includes('screen=memo')) {
     }
 );
 
-
+}
 
 
 
