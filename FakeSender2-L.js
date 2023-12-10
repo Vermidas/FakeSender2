@@ -7,6 +7,7 @@
 // @match        https://*.die-staemme.de/*
 
 // ==/UserScript==
+
 const RELOAD_CHECK_INTERVAL = 250;
 
 function checkAndReload() {
@@ -14,8 +15,7 @@ function checkAndReload() {
         document.body.innerText.includes("405 Not Allowed")){
       location.reload();
     }
-  }
-  setInterval(checkAndReload, RELOAD_CHECK_INTERVAL); 
+  } setInterval(checkAndReload, RELOAD_CHECK_INTERVAL); 
 
 var urlgithub = 'https://raw.githubusercontent.com/Vermidas/FakeSender2/main/Lizenz.txt';
 var userName = game_data.player.name;
@@ -44,7 +44,53 @@ fetch(urlgithub)
 
 if (typeof DEBUG !== 'boolean') DEBUG = false;
 
+const ACTION_DELAY_MIN = 100;
+const ACTION_DELAY_MAX = 600;
 
+function performAction(selectorId) {
+  const element = document.getElementById(selectorId);
+  if (element) {
+    element.click();
+  }
+}
+
+function abschicken() {
+    
+        const gesuchterSchluessel = game_data.village.id;
+        const url = window.location.href;
+  
+        const key = "FakeSender_" + gesuchterSchluessel;
+        if (localStorage.getItem(key) != null) {
+            
+        document.title = `FakeSender_${game_data.village.id}`;
+        var tabName = document.title;
+        if (tabName === `FakeSender_${game_data.village.id}`) {
+
+            const hasScreenPlace = url.includes("screen=place&target")
+            const hasScreenPlace2 = url.includes("screen=place&village");
+            const hasScreenPlaceConfirm = url.includes("screen=place&try=confirm");
+
+
+
+        if (hasScreenPlace) {
+            setTimeout(() => {
+                performAction("target_attack");
+            }, Math.floor(Math.random() * (ACTION_DELAY_MAX - ACTION_DELAY_MIN)) + ACTION_DELAY_MIN);
+            } else if (hasScreenPlaceConfirm) {
+            setTimeout(() => {
+                performAction("troop_confirm_submit");
+            }, Math.floor(Math.random() * (ACTION_DELAY_MAX - ACTION_DELAY_MIN)) + ACTION_DELAY_MIN);
+            }
+
+            const errorBox = document.querySelector(".error_box");
+            if (errorBox && errorBox.textContent.includes("Angriffstrupp") || hasScreenPlace2) {      
+            localStorage.removeItem(key); 
+            window.close();
+            }
+        }
+    }
+} 
+abschicken();
 
 
 
@@ -1918,54 +1964,6 @@ if (window.location.href.includes('screen=memo')) {
 }
 
 
-
-const ACTION_DELAY_MIN = 100;
-const ACTION_DELAY_MAX = 600;
-
-function performAction(selectorId) {
-  const element = document.getElementById(selectorId);
-  if (element) {
-    element.click();
-  }
-}
-
-function abschicken() {
-    
-        const gesuchterSchluessel = game_data.village.id;
-        const url = window.location.href;
-  
-        const key = "FakeSender_" + gesuchterSchluessel;
-        if (localStorage.getItem(key) != null) {
-            
-        document.title = `FakeSender_${game_data.village.id}`;
-        var tabName = document.title;
-        if (tabName === `FakeSender_${game_data.village.id}`) {
-
-            const hasScreenPlace = url.includes("screen=place&target")
-            const hasScreenPlace2 = url.includes("screen=place&village");
-            const hasScreenPlaceConfirm = url.includes("screen=place&try=confirm");
-
-
-
-        if (hasScreenPlace) {
-            setTimeout(() => {
-                performAction("target_attack");
-            }, Math.floor(Math.random() * (ACTION_DELAY_MAX - ACTION_DELAY_MIN)) + ACTION_DELAY_MIN);
-            } else if (hasScreenPlaceConfirm) {
-            setTimeout(() => {
-                performAction("troop_confirm_submit");
-            }, Math.floor(Math.random() * (ACTION_DELAY_MAX - ACTION_DELAY_MIN)) + ACTION_DELAY_MIN);
-            }
-
-            const errorBox = document.querySelector(".error_box");
-            if (errorBox && errorBox.textContent.includes("Angriffstrupp") || hasScreenPlace2) {      
-            localStorage.removeItem(key); 
-            window.close();
-            }
-        }
-    }
-} 
-abschicken();
 
 //
 
