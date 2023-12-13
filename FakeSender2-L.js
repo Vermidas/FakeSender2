@@ -135,6 +135,7 @@ var scriptConfig = {
             'Coordinates Input': 'Coordinates Input',
         },
         de_DE: {
+            'Gruppe': 'Gruppe',
             'Ankunft beliebig': 'Ankunft beliebig',
             'Angriffe Senden': 'Angriffe Senden',
             'Abschickzeitraum': 'Abschickzeitraum',
@@ -443,6 +444,14 @@ $.getScript(
                                 <option value="automatic">${twSDK.tt('Automatic')}</option>
                             </select>
                         </fieldset>
+                        <fieldset class="ra-fieldsetnoborder" id="gruppe">
+                        <div class="title">
+                            <legend>${twSDK.tt('Gruppe')}</legend>
+                        </div>
+                        <input type="text" class="ra-input" style="width: 200px" multiple list="raSelectGroup" placeholder="..." id="raGroup">
+                        <datalist id="raSelectGroup"></datalist>
+                    </fieldset>
+                    
                         <fieldset class="ra-fieldsetnoborder" id="playerFieldset" >
                             <div class="title">
                                 <legend>${twSDK.tt('Player')}</legend>
@@ -698,8 +707,54 @@ $.getScript(
     } setupCoordinatesFillMethod();
     
     } buildUI();
-    
 
+    let selectedGroupId = null;
+    
+    $(document).ready(function() {
+        fetchAndPopulateDropdown();
+    });
+    
+    let groupTitlesToIds = {}; // Objekt, um Titel und IDs zuzuordnen
+    
+    function fetchAndPopulateDropdown() {
+        const url = 'game.php?village=&screen=overview_villages&mode=prod';
+    
+        $.get(url, function(data) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const groupMenuItems = $(doc).find('.vis_item .group-menu-item');
+    
+            if (groupMenuItems.length === 0) {
+                console.error('Keine .group-menu-item Elemente gefunden');
+                return;
+            }
+    
+            const datalist = $('#raSelectGroup');
+            datalist.empty(); // Sicherstellen, dass das Datalist leer ist
+    
+            groupMenuItems.each(function() {
+                const title = $(this).text().trim(); // Text des Links als Titel
+                const groupId = $(this).data('group-id');
+                if (groupId !== undefined && groupId !== null) {
+                    groupTitlesToIds[title] = groupId; // Speichern der Zuordnung
+                    datalist.append(`<option value="${title}">${title}</option>`);
+                }
+            });
+    
+            $('#raGroup').on('input', function() {
+                const selectedTitle = $(this).val();
+                selectedGroupId = groupTitlesToIds[selectedTitle];
+                if (selectedGroupId) {
+                    console.log('Selected Group ID:', selectedGroupId);
+                }
+            });
+        }).fail(function() {
+            console.error('Problem beim Abrufen der Daten');
+        });
+    }
+    
+    
+    
 
 
 
@@ -1022,11 +1077,13 @@ $.getScript(
 
     function getPageData(page) {
         return new Promise((resolve, reject) => {
-            $.get(`game.php?screen=overview_villages&mode=units&type=there&group=0&page=${page}`, function (data) {
+            // Verwenden der gespeicherten Gruppen-ID
+            $.get(`game.php?screen=overview_villages&mode=units&type=there&group=${selectedGroupId}&page=${page}`, function (data) {
                 resolve(data);
             }).fail(reject);
         });
     }
+
     function startProgressBar() {
         return setInterval(function () {
             console.log("Ladebalken wird aktualisiert...");
