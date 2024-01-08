@@ -8,18 +8,6 @@
 
 // ==/UserScript==
 
-function deleteFakeSenderKeys() {
-    const keysToDelete = [];
-  
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key.includes('FakeSender')) {
-        keysToDelete.push(key);
-      }
-    }
-    keysToDelete.forEach(key => localStorage.removeItem(key));
-  }
-  deleteFakeSenderKeys();
   
 
 const RELOAD_CHECK_INTERVAL = 250;
@@ -2039,7 +2027,18 @@ setInterval(updateAttackTable, 500); //500ms
     }
 document.getElementById('senden').addEventListener('click', sendAttackTabs);
     
-
+function deleteFakeSenderKeys() {
+    const keysToDelete = [];
+  
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key.includes('FakeSender')) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach(key => localStorage.removeItem(key));
+  }
+  deleteFakeSenderKeys();
 
 
 
