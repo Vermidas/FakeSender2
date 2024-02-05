@@ -599,6 +599,10 @@ $.getScript(
                                 <legend>${twSDK.tt('Ankunft beliebig')}</legend>
                                 <input type="checkbox" id="Ankunftbeliebig1" name="Ankunft beliebig">
                             </div>
+                            <div id="AbgleichenContainer" style="width: 100%; background-color: grey;">
+                            <div id="AbgleichenLaden" style="width: 0%; height: 20px; background-color: green;"></div>
+                            </div>
+
                             </fieldset>
 
                         </fieldset>
@@ -1027,43 +1031,29 @@ $.getScript(
     });
 
     let villageDataArray = [];
-
-    async function trpabgleichen(callback) {
+    async function trpabgleichen() {
         try {
             updateProgressBar(0);
-
             const maxPages = await getMaxPages();
-
             if (maxPages === 0) {
-                processVillageData(data);
-                printVillageData();
-                // Rufe das Callback auf, um zu signalisieren, dass alles abgeschlossen ist
-                callback();
+                // Verarbeitungslogik für den Fall, dass keine Seiten vorhanden sind
             } else {
-                progressBarInterval = startProgressBar();
-
+                const progressBarInterval = startProgressBar();
                 for (let a = 0; a < maxPages; a++) {
                     await delay(200);
                     const data = await getPageData(a);
                     processVillageData(data);
-
                     const progress = ((a + 1) / maxPages) * 100;
                     updateProgressBar(progress);
-
-                    if (a === maxPages - 1) {
-                        stopProgressBar(progressBarInterval);
-                        printVillageData();
-
-                        callback();
-                    }
                 }
+                stopProgressBar(progressBarInterval);
+                printVillageData();
             }
         } catch (error) {
             console.error("Fehler beim Laden der Daten:", error);
-            // Fehlerbehandlung hier
-            callback(); // Rufe das Callback auch im Fehlerfall auf, um sicherzustellen, dass es immer aufgerufen wird
         }
     }
+    
     function updateProgressBar(progress) {
         $("#progressbar").css("width", progress + "%");
     }
@@ -1096,34 +1086,44 @@ $.getScript(
         console.log("Ladebalken gestoppt.");
     }
     function processVillageData(data) {
-        $(".quickedit-vn", data).each(function (i) {
+        // Verwenden von Vanilla JavaScript zum Parsen des HTML-Strings
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data, 'text/html');
+        
+        const villageNodes = doc.querySelectorAll('.quickedit-vn');
+        villageDataArray = []; // Reset, oder entfernen, wenn Daten akkumuliert werden sollen
+    
+        villageNodes.forEach(node => {
             let villageData = {
-                id: $(this).attr("data-id"),
+                id: node.getAttribute("data-id"),
                 units: {},
                 coordinates: ""
             };
-
+    
             const unitNames = ["spear", "sword", "axe", "archer", "spy", "light", "marcher", "heavy", "ram", "catapult", "knight", "snob", "miliz"];
-
-            $(".unit-item", $(this).closest('tr')).each(function (j) {
-                let unitName = unitNames[j];
-                let unitValue = $(this).text();
+            const units = node.closest('tr').querySelectorAll('.unit-item');
+    
+            units.forEach((unit, index) => {
+                let unitName = unitNames[index];
+                let unitValue = unit.textContent.trim(); // Verwendung von textContent für bessere Performance
                 villageData.units[unitName] = unitValue;
             });
-
-            // Extract coordinates from the additional text
-            let additionalText = $("span.quickedit-label", this).text();
-            let coordsRegex = /\d{1,3}\|\d{1,3}/g;
-            let coordinatesMatch = coordsRegex.exec(additionalText);
-            villageData.coordinates = coordinatesMatch ? coordinatesMatch[0] : "";
-
-            villageDataArray.push(villageData);
-
-            if (i === $(".quickedit-vn", data).length - 1) {
-                console.log("Processing data for page complete.");
+    
+            // Extrahieren der Koordinaten
+            let coordsText = node.querySelector('span.quickedit-label').textContent;
+            let coordsRegex = /\d{1,3}\|\d{1,3}/;
+            let match = coordsRegex.exec(coordsText);
+            if (match) {
+                villageData.coordinates = match[0];
             }
+    
+            villageDataArray.push(villageData);
         });
+    
+        // Optional: Hier könnte eine Logik stehen, um die verarbeiteten Daten anzuzeigen oder weiterzuverarbeiten
+        console.log(villageDataArray);
     }
+    
     function printVillageData() {
         console.log(villageDataArray);
     }
@@ -1281,7 +1281,10 @@ $.getScript(
             console.error('Fehler bei der Angriffsplanung:', error);
         }
     }
-
+    function updateProgressBarAbgleich(progress) {
+        const progressBar = document.getElementById('AbgleichenLaden');
+        progressBar.style.width = progress + '%';
+    }
     ////RANDOM FÜR SOFORT + ANKUNFTSZEITRAUM////
     function planAttacksForVariationZEITRAUM(randomizedAttacks, attackCount, currentServerTime, landingTime) {
         let sourceVillageUsageCount = new Map();
@@ -1328,37 +1331,60 @@ $.getScript(
         return shuffledAttacks;
     }
     function planRandomizedAttacksZEITRAUM(allPossibleAttacks, attackCount, currentServerTime, landingTime) {
-        const NUM_VARIATIONS = 250;
+        const NUM_VARIATIONS = 5;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
-
-        for (let i = 0; i < NUM_VARIATIONS; i++) {
-            let randomizedAttacks = getRandomizedAttacksZEITRAUM(allPossibleAttacks);
-            let plannedAttacks = planAttacksForVariationZEITRAUM(randomizedAttacks, attackCount, currentServerTime, landingTime);
-
-            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
-            if (uniqueStartVillages > maxUniqueStartVillages) {
-                maxUniqueStartVillages = uniqueStartVillages;
-                bestAttackPlan = plannedAttacks;
-            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
-                bestAttackPlan = plannedAttacks;
+        let currentIteration = 0;
+    
+        updateProgressBarAbgleich(0); // Initialisiere den Ladebalken
+    
+        // Rekursive Iterationsfunktion
+        function iterationStep() {
+            if (currentIteration < NUM_VARIATIONS) {
+                let randomizedAttacks = getRandomizedAttacksZEITRAUM(allPossibleAttacks);
+                let plannedAttacks = planAttacksForVariationZEITRAUM(randomizedAttacks, attackCount, currentServerTime, landingTime);
+    
+                let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+                if (uniqueStartVillages > maxUniqueStartVillages) {
+                    maxUniqueStartVillages = uniqueStartVillages;
+                    bestAttackPlan = plannedAttacks;
+                } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                    bestAttackPlan = plannedAttacks;
+                }
+    
+                updateProgressBarAbgleich((currentIteration + 1) / NUM_VARIATIONS * 100);
+                currentIteration++;
+                setTimeout(iterationStep, 100); // Verzögere den nächsten Schritt um 100ms
+            } else {
+                // Nach Abschluss der Iterationen, verarbeite die Ergebnisse
+                processFinalAttackPlans(bestAttackPlan);
             }
         }
-
-        return bestAttackPlan.map(attack => {
-            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-            return {
-                StartDorf: attack.sourceVillage.VillagCoord,
-                ZielDorf: attack.targetVillage.coordinates,
-                Entfernung: attack.distance,
-                Reisezeit: attack.travelTime,
-                Ankunftszeit: arrivalTime.toLocaleString(),
-                SendeZeit: 'Jetzt senden'
-            };
-        });
+    
+        // Funktion zum Verarbeiten der finalen Angriffspläne
+        function processFinalAttackPlans(finalAttackPlans) {
+            let attackPlans = finalAttackPlans.map(attack => {
+                let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+                let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+    
+                return {
+                    StartDorf: attack.sourceVillage.VillagCoord,
+                    ZielDorf: attack.targetVillage.coordinates,
+                    Entfernung: attack.distance,
+                    Reisezeit: attack.travelTime,
+                    Ankunftszeit: arrivalTime.toLocaleString(),
+                    SendeZeit: 'Jetzt senden'
+                };
+            });
+    
+            // Hier könnten Sie die Ergebnisse verwenden, z.B. eine Tabelle erstellen
+            console.log('Beste Angriffspläne:', attackPlans);
+             createAttackTable(attackPlans); // Angenommen, diese Funktion ist definiert
+        }
+    
+        iterationStep(); // Starte die iterative Verarbeitung
     }
+    
     ////////////////////////////////////
     ////RANDOM FÜR SOFORT + GANZTAGS////
     function planAttacksForVariationGANZTAGS(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours) {
@@ -1405,38 +1431,60 @@ $.getScript(
         }
         return shuffledAttacks;
     }
+
     function planRandomizedAttacksGANZTAGS(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours) {
-        const NUM_VARIATIONS = 250;
+        const NUM_VARIATIONS = 5;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
-
-        for (let i = 0; i < NUM_VARIATIONS; i++) {
-            let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
-            let plannedAttacks = planAttacksForVariationGANZTAGS(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
-
-            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
-            if (uniqueStartVillages > maxUniqueStartVillages) {
-                maxUniqueStartVillages = uniqueStartVillages;
-                bestAttackPlan = plannedAttacks;
-            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
-                bestAttackPlan = plannedAttacks;
+        let currentIteration = 0;
+    
+        updateProgressBarAbgleich(0); // Initialisiere den Ladebalken
+    
+        function iterationStep() {
+            if (currentIteration < NUM_VARIATIONS) {
+                let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
+                let plannedAttacks = planAttacksForVariationGANZTAGS(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
+    
+                let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+                if (uniqueStartVillages > maxUniqueStartVillages) {
+                    maxUniqueStartVillages = uniqueStartVillages;
+                    bestAttackPlan = plannedAttacks;
+                } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                    bestAttackPlan = plannedAttacks;
+                }
+    
+                updateProgressBarAbgleich((currentIteration + 1) / NUM_VARIATIONS * 100);
+                currentIteration++;
+                setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
+            } else {
+                // Schleife ist komplett, verarbeite das Ergebnis
+                finalizeAttackPlans();
             }
         }
-
-        return bestAttackPlan.map(attack => {
-            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-            return {
-                StartDorf: attack.sourceVillage.VillagCoord,
-                ZielDorf: attack.targetVillage.coordinates,
-                Entfernung: attack.distance,
-                Reisezeit: attack.travelTime,
-                Ankunftszeit: arrivalTime.toLocaleString(),
-                SendeZeit: 'Jetzt senden'
-            };
-        });
+    
+        function finalizeAttackPlans() {
+            let attackPlans = bestAttackPlan.map(attack => {
+                let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+                let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+    
+                return {
+                    StartDorf: attack.sourceVillage.VillagCoord,
+                    ZielDorf: attack.targetVillage.coordinates,
+                    Entfernung: attack.distance,
+                    Reisezeit: attack.travelTime,
+                    Ankunftszeit: arrivalTime.toLocaleString(),
+                    SendeZeit: 'Jetzt senden'
+                };
+            });
+    
+            // Implementieren Sie hier die Logik, um die Tabelle basierend auf `attackPlans` zu erstellen.
+            // Zum Beispiel könnten Sie die Ergebnisse in einer Tabelle anzeigen:
+             createAttackTable(attackPlans);
+        }
+    
+        iterationStep(); // Starte die Iteration
     }
+    
     function isWithinTimeWindow(arrivalTime, DayWithNightHours) {
         let arrivalDate = arrivalTime.toISOString().split('T')[0];
         if (arrivalDate !== DayWithNightHours.date) {
@@ -1456,39 +1504,59 @@ $.getScript(
     ////////////////////////////////////
     ////RANDOM FÜR ABSCHICKZEITRAUM + GANZTAGS////
     function planRandomizedAttacksWithStartTimeGANZTAGS(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime) {
-        const NUM_VARIATIONS = 250;
+        const NUM_VARIATIONS = 5;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
-
-        for (let i = 0; i < NUM_VARIATIONS; i++) {
-            let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
-            let plannedAttacks = planAttacksForVariationGANZTAGS(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
-
-            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
-            if (uniqueStartVillages > maxUniqueStartVillages) {
-                maxUniqueStartVillages = uniqueStartVillages;
-                bestAttackPlan = plannedAttacks;
-            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
-                bestAttackPlan = plannedAttacks;
+        let currentIteration = 0;
+    
+        updateProgressBarAbgleich(0); // Initialisiere den Ladebalken
+    
+        function iterationStep() {
+            if (currentIteration < NUM_VARIATIONS) {
+                let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
+                let plannedAttacks = planAttacksForVariationGANZTAGS(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
+    
+                let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+                if (uniqueStartVillages > maxUniqueStartVillages) {
+                    maxUniqueStartVillages = uniqueStartVillages;
+                    bestAttackPlan = plannedAttacks;
+                } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                    bestAttackPlan = plannedAttacks;
+                }
+    
+                updateProgressBarAbgleich((currentIteration + 1) / NUM_VARIATIONS * 100);
+                currentIteration++;
+                setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
+            } else {
+                // Schleife ist komplett, verarbeite das Ergebnis
+                processFinalAttackPlans(bestAttackPlan);
             }
         }
-
-        return bestAttackPlan.map(attack => {
-            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-            let sendTime = calculateSendTimeWithinWindow(attackTime, currentServerTime, travelTimeMs);
-
-            return {
-                StartDorf: attack.sourceVillage.VillagCoord,
-                ZielDorf: attack.targetVillage.coordinates,
-                Entfernung: attack.distance,
-                Reisezeit: attack.travelTime,
-                Ankunftszeit: arrivalTime.toLocaleString(),
-                SendeZeit: sendTime.toLocaleString()
-            };
-        });
+    
+        function processFinalAttackPlans(bestAttackPlan) {
+            let attackPlans = bestAttackPlan.map(attack => {
+                let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+                let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+                let sendTime = calculateSendTimeWithinWindow(attackTime, currentServerTime, travelTimeMs);
+    
+                return {
+                    StartDorf: attack.sourceVillage.VillagCoord,
+                    ZielDorf: attack.targetVillage.coordinates,
+                    Entfernung: attack.distance,
+                    Reisezeit: attack.travelTime,
+                    Ankunftszeit: arrivalTime.toLocaleString(),
+                    SendeZeit: sendTime.toLocaleString()
+                };
+            });
+    
+            // Implementieren Sie hier die Logik, um die Tabelle basierend auf `attackPlans` zu erstellen.
+            // Zum Beispiel:
+            // createAttackTable(attackPlans);
+        }
+    
+        iterationStep(); // Starte die Iteration
     }
+    
     function calculateSendTimeWithinWindow(attackTime, currentServerTime, travelTimeMs) {
         if (!attackTime || !attackTime.startTime || !attackTime.endTime) {
             throw new Error('Attack time window is not defined properly.');
@@ -1564,26 +1632,40 @@ $.getScript(
 
         return plannedAttacks;
     }
+
     function planRandomizedAttacksZEITRAUMTwo(allPossibleAttacks, attackCount, currentServerTime, landingTime, attackTime) {
-        const NUM_VARIATIONS = 250;
+        const NUM_VARIATIONS = 5;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
-
-        for (let i = 0; i < NUM_VARIATIONS; i++) {
-            let randomizedAttacks = getRandomizedAttacksZEITRAUM(allPossibleAttacks);
-            let plannedAttacks = planAttacksForVariationWithStartTimeZEITRAUM(randomizedAttacks, attackCount, currentServerTime, landingTime, attackTime);
-
-            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.StartDorf)).size;
-            if (uniqueStartVillages > maxUniqueStartVillages) {
-                maxUniqueStartVillages = uniqueStartVillages;
-                bestAttackPlan = plannedAttacks;
-            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
-                bestAttackPlan = plannedAttacks;
+        let currentIteration = 0;
+    
+        updateProgressBarAbgleich(0); // Initialisiere den Ladebalken
+    
+        function iterationStep() {
+            if (currentIteration < NUM_VARIATIONS) {
+                let randomizedAttacks = getRandomizedAttacksZEITRAUM(allPossibleAttacks);
+                let plannedAttacks = planAttacksForVariationWithStartTimeZEITRAUM(randomizedAttacks, attackCount, currentServerTime, landingTime, attackTime);
+    
+                let uniqueStartVillages = new Set(plannedAttacks.map(a => a.StartDorf)).size;
+                if (uniqueStartVillages > maxUniqueStartVillages) {
+                    maxUniqueStartVillages = uniqueStartVillages;
+                    bestAttackPlan = plannedAttacks;
+                } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                    bestAttackPlan = plannedAttacks;
+                }
+    
+                updateProgressBarAbgleich((currentIteration + 1) / NUM_VARIATIONS * 100);
+                currentIteration++;
+                setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
+            } else {
+                // Schleife ist komplett, verarbeite das Ergebnis
+                createAttackTable(bestAttackPlan);
             }
         }
-
-        return bestAttackPlan;
+    
+        iterationStep(); // Starte die Iteration
     }
+    
     function calculateSendTimeWithinWindowTwo(attackTime, earliestSendTime, latestSendTime) {
         let windowStart = attackTime.startTime > earliestSendTime ? attackTime.startTime : earliestSendTime;
         let windowEnd = attackTime.endTime < latestSendTime ? attackTime.endTime : latestSendTime;
@@ -1630,37 +1712,54 @@ $.getScript(
         return plannedAttacks;
     }
     function planRandomizedAttacksBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours) {
-        const NUM_VARIATIONS = 250;
+        const NUM_VARIATIONS = 5;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
-
-        for (let i = 0; i < NUM_VARIATIONS; i++) {
-            let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
-            let plannedAttacks = planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
-
-            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
-            if (uniqueStartVillages > maxUniqueStartVillages) {
-                maxUniqueStartVillages = uniqueStartVillages;
-                bestAttackPlan = plannedAttacks;
-            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
-                bestAttackPlan = plannedAttacks;
+        let currentIteration = 0;
+    
+        updateProgressBarAbgleich(0); // Initialisiere den Ladebalken
+    
+        function iterationStep() {
+            if (currentIteration < NUM_VARIATIONS) {
+                let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
+                let plannedAttacks = planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
+    
+                let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+                if (uniqueStartVillages > maxUniqueStartVillages) {
+                    maxUniqueStartVillages = uniqueStartVillages;
+                    bestAttackPlan = plannedAttacks;
+                } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                    bestAttackPlan = plannedAttacks;
+                }
+    
+                updateProgressBarAbgleich((currentIteration + 1) / NUM_VARIATIONS * 100);
+                currentIteration++;
+                setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
+            } else {
+                // Schleife ist komplett, verarbeite das Ergebnis
+                let attackPlans = bestAttackPlan.map(attack => {
+                    let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+                    let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+    
+                    return {
+                        StartDorf: attack.sourceVillage.VillagCoord,
+                        ZielDorf: attack.targetVillage.coordinates,
+                        Entfernung: attack.distance,
+                        Reisezeit: attack.travelTime,
+                        Ankunftszeit: arrivalTime.toLocaleString(),
+                        SendeZeit: 'Jetzt senden'
+                    };
+                });
+    
+                // Hier könnten Sie die Ergebnisse verwenden, z.B. eine Tabelle erstellen
+                createAttackTable(attackPlans);
+                //return bestAttackPlan;
             }
         }
-
-        return bestAttackPlan.map(attack => {
-            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-            return {
-                StartDorf: attack.sourceVillage.VillagCoord,
-                ZielDorf: attack.targetVillage.coordinates,
-                Entfernung: attack.distance,
-                Reisezeit: attack.travelTime,
-                Ankunftszeit: arrivalTime.toLocaleString(),
-                SendeZeit: 'Jetzt senden'
-            };
-        });
+    
+        iterationStep(); // Starte die Iteration
     }
+    
     function isWithinTimeWindowBeliebig(arrivalTime, DayWithNightHours) {
         let arrivalHour = arrivalTime.getHours();
         let startHour = parseInt(DayWithNightHours.start_hour);
@@ -1675,39 +1774,58 @@ $.getScript(
     ////////////////////////////////////
     ////RANDOM FÜR ABSCHICKZEITRAUM + BELIEBIG//// 
     function planRandomizedAttacksWithStartTimeBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime) {
-        const NUM_VARIATIONS = 250;
+        const NUM_VARIATIONS = 5;
         let bestAttackPlan = [];
         let maxUniqueStartVillages = 0;
-
-        for (let i = 0; i < NUM_VARIATIONS; i++) {
-            let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
-            let plannedAttacks = planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
-
-            let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
-            if (uniqueStartVillages > maxUniqueStartVillages) {
-                maxUniqueStartVillages = uniqueStartVillages;
-                bestAttackPlan = plannedAttacks;
-            } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
-                bestAttackPlan = plannedAttacks;
+        let currentIteration = 0;
+    
+        updateProgressBarAbgleich(0); // Initialisiere den Ladebalken
+    
+        function iterationStep() {
+            if (currentIteration < NUM_VARIATIONS) {
+                let randomizedAttacks = getRandomizedAttacksGANZTAGS(allPossibleAttacks);
+                let plannedAttacks = planAttacksForVariationBeliebig(randomizedAttacks, attackCount, currentServerTime, DayWithNightHours);
+    
+                let uniqueStartVillages = new Set(plannedAttacks.map(a => a.sourceVillage.VillagCoord)).size;
+                if (uniqueStartVillages > maxUniqueStartVillages) {
+                    maxUniqueStartVillages = uniqueStartVillages;
+                    bestAttackPlan = plannedAttacks;
+                } else if (uniqueStartVillages === maxUniqueStartVillages && plannedAttacks.length > bestAttackPlan.length) {
+                    bestAttackPlan = plannedAttacks;
+                }
+    
+                updateProgressBarAbgleich((currentIteration + 1) / NUM_VARIATIONS * 100);
+                currentIteration++;
+                setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
+            } else {
+                // Schleife ist komplett, verarbeite das Ergebnis
+                finalizeAttackPlans();
             }
         }
-
-        return bestAttackPlan.map(attack => {
-            let travelTimeMs = hmsToMilliseconds(attack.travelTime);
-            let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
-
-            let sendTime = calculateSendTimeWithinWindowBeliebig(attackTime, currentServerTime, travelTimeMs);
-
-            return {
-                StartDorf: attack.sourceVillage.VillagCoord,
-                ZielDorf: attack.targetVillage.coordinates,
-                Entfernung: attack.distance,
-                Reisezeit: attack.travelTime,
-                Ankunftszeit: arrivalTime.toLocaleString(),
-                SendeZeit: sendTime.toLocaleString()
-            };
-        });
+    
+        function finalizeAttackPlans() {
+            let attackPlans = bestAttackPlan.map(attack => {
+                let travelTimeMs = hmsToMilliseconds(attack.travelTime);
+                let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
+                let sendTime = calculateSendTimeWithinWindowBeliebig(attackTime, currentServerTime, travelTimeMs);
+    
+                return {
+                    StartDorf: attack.sourceVillage.VillagCoord,
+                    ZielDorf: attack.targetVillage.coordinates,
+                    Entfernung: attack.distance,
+                    Reisezeit: attack.travelTime,
+                    Ankunftszeit: arrivalTime.toLocaleString(),
+                    SendeZeit: sendTime.toLocaleString()
+                };
+            });
+    
+            // Hier könnten Sie die Ergebnisse verwenden, z.B. eine Tabelle erstellen
+            createAttackTable(attackPlans);
+        }
+    
+        iterationStep(); // Starte die Iteration
     }
+    
     function calculateSendTimeWithinWindowBeliebig(attackTime, currentServerTime, travelTimeMs) {
         if (!attackTime || !attackTime.startTime || !attackTime.endTime) {
             throw new Error('Attack time window is not defined properly.');
@@ -1808,7 +1926,7 @@ $.getScript(
 
 //////////TABELLE//////// 
 
-    function createAttackTable(attacksData) {
+ function createAttackTable(attacksData) {
         // Überprüfen, ob bereits eine Tabelle existiert und diese entfernen
         let existingTable = document.getElementById('attacksTable');
         if (existingTable) {
