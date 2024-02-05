@@ -1238,40 +1238,40 @@ $.getScript(
             if (sofortSchickenCheckbox.checked && ganztagsCheckbox.checked) {
                 let DayWithNightHours = getDayWithNightHours();
                 let attacksData = planRandomizedAttacksGANZTAGS(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours);
-                createAttackTable(attacksData);
-                sendAttacks(attacksData)
+                // createAttackTable(attacksData);
+                // sendAttacks(attacksData)
             ////RANDOM FÜR ABSCHICKZEITRAUM + GANZTAGS////
             } else if (AbschickzeitraumCheckbox.checked && ganztagsCheckbox.checked) {
                 let DayWithNightHours = getDayWithNightHours();
                 let attackTime = getStartTime();
                 let attacksData = planRandomizedAttacksWithStartTimeGANZTAGS(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime);
-                createAttackTable(attacksData);
-                sendAttacks(attacksData)
+                // createAttackTable(attacksData);
+                // sendAttacks(attacksData)
             ////RANDOM FÜR SOFORT + ANKUNFTSZEITRAUM////    
             } else if (sofortSchickenCheckbox.checked && zeitraumCheckbox.checked) {
                 let landingTime = getLandingTime();
                 let attacksData = planRandomizedAttacksZEITRAUM(allPossibleAttacks, attackCount, currentServerTime, landingTime);
-                createAttackTable(attacksData);
-                sendAttacks(attacksData)
+                // createAttackTable(attacksData);
+                // sendAttacks(attacksData)
             ////RANDOM FÜR ABSCHICKZEITRAUM + ANKUNFTSZEITRAUM////    
             } else if (AbschickzeitraumCheckbox.checked && zeitraumCheckbox.checked) {
                 let landingTime = getLandingTime();
                 let attackTime = getStartTime();
                 let attacksData = planRandomizedAttacksZEITRAUMTwo(allPossibleAttacks, attackCount, currentServerTime, landingTime, attackTime);
-                createAttackTable(attacksData);
-                sendAttacks(attacksData)
+                // createAttackTable(attacksData);
+                // sendAttacks(attacksData)
             } else if (sofortSchickenCheckbox.checked && ankunftBeliebig.checked) {
                 let DayWithNightHours = getDayWithNightHours();
                 let attacksData = planRandomizedAttacksBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours);
-                createAttackTable(attacksData);
-                sendAttacks(attacksData)
+                // createAttackTable(attacksData);
+                // sendAttacks(attacksData)
             ////RANDOM FÜR ABSCHICKZEITRAUM + GANZTAGS////
             } else if (AbschickzeitraumCheckbox.checked && ankunftBeliebig.checked) {
                 let DayWithNightHours = getDayWithNightHours();
                 let attackTime = getStartTime();
                 let attacksData = planRandomizedAttacksWithStartTimeBeliebig(allPossibleAttacks, attackCount, currentServerTime, DayWithNightHours, attackTime);
-                createAttackTable(attacksData);
-                sendAttacks(attacksData) 
+                // createAttackTable(attacksData);
+                // sendAttacks(attacksData) 
             } else {
                 // Implementierung für andere Fälle oder eine Fehlermeldung
                 console.log("Mindestens eine Checkbox muss ausgewählt sein.");
@@ -1377,9 +1377,8 @@ $.getScript(
                 };
             });
     
-            // Hier könnten Sie die Ergebnisse verwenden, z.B. eine Tabelle erstellen
-            console.log('Beste Angriffspläne:', attackPlans);
-             createAttackTable(attackPlans); // Angenommen, diese Funktion ist definiert
+            createAttackTable(attacksData);
+            sendAttacks(attacksData) 
         }
     
         iterationStep(); // Starte die iterative Verarbeitung
@@ -1477,9 +1476,8 @@ $.getScript(
                 };
             });
     
-            // Implementieren Sie hier die Logik, um die Tabelle basierend auf `attackPlans` zu erstellen.
-            // Zum Beispiel könnten Sie die Ergebnisse in einer Tabelle anzeigen:
-             createAttackTable(attackPlans);
+            createAttackTable(attacksData);
+            sendAttacks(attacksData) 
         }
     
         iterationStep(); // Starte die Iteration
@@ -1549,9 +1547,8 @@ $.getScript(
                 };
             });
     
-            // Implementieren Sie hier die Logik, um die Tabelle basierend auf `attackPlans` zu erstellen.
-            // Zum Beispiel:
-            // createAttackTable(attackPlans);
+            createAttackTable(attacksData);
+            sendAttacks(attacksData) 
         }
     
         iterationStep(); // Starte die Iteration
@@ -1659,7 +1656,8 @@ $.getScript(
                 setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
             } else {
                 // Schleife ist komplett, verarbeite das Ergebnis
-                createAttackTable(bestAttackPlan);
+                createAttackTable(attacksData);
+                sendAttacks(attacksData) 
             }
         }
     
@@ -1737,7 +1735,7 @@ $.getScript(
                 setTimeout(iterationStep, 100); // Nächster Schritt nach 100ms
             } else {
                 // Schleife ist komplett, verarbeite das Ergebnis
-                let attackPlans = bestAttackPlan.map(attack => {
+                let attacksData = bestAttackPlan.map(attack => {
                     let travelTimeMs = hmsToMilliseconds(attack.travelTime);
                     let arrivalTime = new Date(currentServerTime.getTime() + travelTimeMs);
     
@@ -1752,7 +1750,8 @@ $.getScript(
                 });
     
                 // Hier könnten Sie die Ergebnisse verwenden, z.B. eine Tabelle erstellen
-                createAttackTable(attackPlans);
+                createAttackTable(attacksData);
+                sendAttacks(attacksData) 
                 //return bestAttackPlan;
             }
         }
@@ -1820,7 +1819,8 @@ $.getScript(
             });
     
             // Hier könnten Sie die Ergebnisse verwenden, z.B. eine Tabelle erstellen
-            createAttackTable(attackPlans);
+            createAttackTable(attacksData);
+            sendAttacks(attacksData) 
         }
     
         iterationStep(); // Starte die Iteration
@@ -2062,6 +2062,12 @@ setInterval(updateAttackTable, 500); //500ms
         attacksDataTable = attacksData
         console.debug(currentChosenUnits);
 
+        if (!Array.isArray(attacksData)) {
+            console.error('attacksData ist nicht definiert oder kein Array.');
+            return;
+        }
+        
+
         const unitQueryStringSegments = Object.entries(currentChosenUnits).map(([unit, count]) => `&${unit}=${count}`).join('');
 
         const villages = await twSDK.worldDataAPI('village');
@@ -2088,61 +2094,71 @@ setInterval(updateAttackTable, 500); //500ms
 
     async function sendAttackTabs() {
         try {
-
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('FakeSender')) {
+            // Bereinige localStorage von Einträgen, die mit 'FakeSender' beginnen
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('FakeSender')) {
                     localStorage.removeItem(key);
                 }
-            }
-            
+            });
+    
             const attackInterval = angriffeSenden();
             const urls = await sendAttacks(attacksDataTable);
+            console.log(urls);
+            if (!urls || urls.length === 0) {
+                console.error('Keine URLs definiert oder leeres Array zurückgegeben.');
+                return; // Frühzeitige Beendigung, um weitere Fehler zu vermeiden
+            }
+            
+            // Bestimme den Bereich der Angriffe, die gesendet werden sollen
             const endIndex = Math.min(currentAttackIndex + attackInterval, urls.length);
-            console.debug("test", attacksDataTable)
-
+            console.debug("test", attacksDataTable);
+    
             const foundVillages = await findVillages();
-
+    
+            // Speichere gefundene Dörfer in localStorage
             foundVillages.forEach(village => {
-                localStorage.setItem('FakeSender_' + village.id, village.id);
+                localStorage.setItem(`FakeSender_${village.id}`, village.id);
             });
-
+    
+            // Öffne Tabs für Angriffe innerhalb des festgelegten Bereichs
             for (let i = currentAttackIndex; i < endIndex; i++) {
-                // Verzögert das Öffnen jedes Tabs
+                console.log(`Schleife bei Index ${i} erreicht, versuche, openTab aufzurufen.`);
                 setTimeout(() => openTab(i, urls), TAB_OPEN_DELAY * (i - currentAttackIndex));
             }
-
-            // Aktualisiert den currentAttackIndex nachdem alle Tabs geöffnet wurden
+            
+            // Aktualisiere currentAttackIndex nach dem Öffnen aller Tabs
             await new Promise(resolve => setTimeout(resolve, TAB_OPEN_DELAY * (endIndex - currentAttackIndex)));
             currentAttackIndex = endIndex;
         } catch (error) {
-            console.error('Fehler beim Verarbeiten der Angriffe:', error);
-        }
-        async function findVillages() {
-            const villages = await twSDK.worldDataAPI('village');
-            const foundVillages = [];
-            attacksDataTable.forEach(attack => {
-                if (attack.StartDorf) {
-                    const [x, y] = attack.StartDorf.trim().split('|');
-                    const village = villages.find(village => village[2] === x && village[3] === y);
-                    if (village) {
-                        const villageId = village[0];
-                        foundVillages.push({ id: villageId, coordinates: `${x}|${y}` });
-                    }
-                }
-            });
-            return foundVillages;
-        }
-
-        function openTab(index, urls) {
-            const newTab = window.open(urls[index], '_blank');
-        
-            const row = document.getElementById('attackRow-' + index);
-            if (row) {
-                row.style.backgroundColor = 'green';
-            }
+            console.error('Fehler in sendAttacks:', error);
+            return []; 
         }
     }
+    
+    async function findVillages() {
+        const villages = await twSDK.worldDataAPI('village');
+        return attacksDataTable.reduce((acc, attack) => {
+            if (attack.StartDorf) {
+                const [x, y] = attack.StartDorf.trim().split('|');
+                const village = villages.find(v => v[2] === x && v[3] === y);
+                if (village) {
+                    acc.push({ id: village[0], coordinates: `${x}|${y}` });
+                }
+            }
+            return acc;
+        }, []);
+    }
+    
+    function openTab(index, urls) {
+        console.log(`openTab aufgerufen mit URL: ${urls[index]}`);
+        window.open(urls[index], '_blank');
+        const row = document.getElementById(`attackRow-${index}`);
+        if (row) {
+            row.style.backgroundColor = 'green';
+        }
+    }
+    
+    
 document.getElementById('senden').addEventListener('click', sendAttackTabs);
     
 function deleteFakeSenderKeys() {
